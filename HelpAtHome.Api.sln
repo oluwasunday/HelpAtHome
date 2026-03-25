@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36717.8 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelpAtHome.Api", "HelpAtHome.Api\HelpAtHome.Api.csproj", "{3FB3C15E-E6A1-4FB5-BCDE-11C001EC1449}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelpAtHome.Core", "HelpAtHome.Core\HelpAtHome.Core.csproj", "{5FB74F12-8866-42DE-A672-F6DB985C4A6E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelpAtHome.Application", "HelpAtHome.Application\HelpAtHome.Application.csproj", "{BED5837B-DD32-4551-B4F5-BB98E85A5C78}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelpAtHome.Infrastructure", "HelpAtHome.Infrastructure\HelpAtHome.Infrastructure.csproj", "{BCB440AF-3B11-47DB-9A3F-55B3AECC9A77}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelpAtHome.Shared", "HelpAtHome.Shared\HelpAtHome.Shared.csproj", "{03922F8D-6D2B-4132-B46F-19FCEB43D7B2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3FB3C15E-E6A1-4FB5-BCDE-11C001EC1449}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FB3C15E-E6A1-4FB5-BCDE-11C001EC1449}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FB3C15E-E6A1-4FB5-BCDE-11C001EC1449}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FB3C15E-E6A1-4FB5-BCDE-11C001EC1449}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5FB74F12-8866-42DE-A672-F6DB985C4A6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5FB74F12-8866-42DE-A672-F6DB985C4A6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5FB74F12-8866-42DE-A672-F6DB985C4A6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5FB74F12-8866-42DE-A672-F6DB985C4A6E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BED5837B-DD32-4551-B4F5-BB98E85A5C78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BED5837B-DD32-4551-B4F5-BB98E85A5C78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BED5837B-DD32-4551-B4F5-BB98E85A5C78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BED5837B-DD32-4551-B4F5-BB98E85A5C78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCB440AF-3B11-47DB-9A3F-55B3AECC9A77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCB440AF-3B11-47DB-9A3F-55B3AECC9A77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCB440AF-3B11-47DB-9A3F-55B3AECC9A77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCB440AF-3B11-47DB-9A3F-55B3AECC9A77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03922F8D-6D2B-4132-B46F-19FCEB43D7B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03922F8D-6D2B-4132-B46F-19FCEB43D7B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03922F8D-6D2B-4132-B46F-19FCEB43D7B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03922F8D-6D2B-4132-B46F-19FCEB43D7B2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C47C5379-81C1-481D-BD8D-3D096000B4E0}
+	EndGlobalSection
+EndGlobal

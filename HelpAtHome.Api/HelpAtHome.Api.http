@@ -1,0 +1,6 @@
+@HelpAtHome.Api_HostAddress = http://localhost:5136
+
+GET {{HelpAtHome.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,524 @@
+﻿using AutoMapper;
+using HelpAtHome.Application.Interfaces;
+using HelpAtHome.Application.Interfaces.Services;
+using HelpAtHome.Core.DTOs.Requests.Auth;
+using HelpAtHome.Core.DTOs.Responses.Auth;
+using HelpAtHome.Core.Entities;
+using HelpAtHome.Core.Enums;
+using HelpAtHome.Shared;
+using Microsoft.AspNetCore.Identity;
+
+namespace HelpAtHome.Application.Services
+{
+    public class AuthService : IAuthService
+    {
+        private readonly IUnitOfWork _uow;
+        private readonly UserManager<User> _userManager;       // Identity
+        private readonly SignInManager<User> _signInManager;   // Identity
+        private readonly IJwtService _jwtService;
+        private readonly INotificationService _notification;
+        //private readonly IAuditLogService _audit;
+        private readonly IMapper _mapper;
+
+        public AuthService(IUnitOfWork uow, UserManager<User> userManager, SignInManager<User> signInManager, 
+            IJwtService jwtService, INotificationService notification, //IAuditLogService audit, 
+            IMapper mapper)
+        {
+            _uow = uow;
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _jwtService = jwtService;
+            _notification = notification;
+            //_audit = audit;
+            _mapper = mapper;
+        }
+
+        public async Task<Result<AuthResponseDto>> LoginAsync(LoginDto dto, string ip)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null || user.IsDeleted)
+                return Result<AuthResponseDto>.Fail("Invalid credentials");
+            if (user.IsSuspended)
+                return Result<AuthResponseDto>.Fail("Account suspended: " + user.SuspensionReason);
+
+            // SignInManager checks password AND enforces Identity lockout policy.
+            // Replaces manual BCrypt.Verify + FailedLoginAttempts + LockoutUntil logic.
+            var signIn = await _signInManager.CheckPasswordSignInAsync(
+                user, dto.Password, lockoutOnFailure: true);
+
+            if (signIn.IsLockedOut)
+                return Result<AuthResponseDto>.Fail(
+                    $"Account locked until {user.LockoutEnd?.UtcDateTime:HH:mm UTC}.");
+            if (!signIn.Succeeded)
+                return Result<AuthResponseDto>.Fail("Invalid credentials");
+
+            user.LastLoginAt = DateTime.UtcNow;
+            user.LastLoginIp = ip;
+            await _userManager.UpdateAsync(user);
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var claims = await _userManager.GetClaimsAsync(user);
+            var accessToken = _jwtService.GenerateAccessToken(user, roles, claims);
+            var refreshToken = _jwtService.GenerateRefreshToken();
+
+            await _uow.RefreshTokens.AddAsync(new RefreshToken
+            {
+                UserId = user.Id,
+                Token = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(30),
+                IpAddress = ip
+            });
+            await _uow.SaveChangesAsync();
+            //await _audit.LogAsync(user.Id.ToString(), user.Role.ToString(), AuditAction.Login, "User", user.Id.ToString(), ipAddress: ip);
+
+            return Result<AuthResponseDto>.Ok(new AuthResponseDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                UserId = user.Id,
+                Role = user.Role,
+                ExpiresAt = DateTime.UtcNow.AddHours(1)
+            });
+        }
+
+        public async Task<Result> ForgotPasswordAsync(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null) return Result.Ok();
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            //await _notification.SendPasswordResetEmailAsync(user.Email!, token, user.FullName);
+            return Result.Ok();
+        }
+
+        public async Task<Result> ChangePasswordAsync(Guid userId, ChangePasswordDto dto)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null) return Result.Fail("User not found");
+            var result = await _userManager.ChangePasswordAsync(user, dto.OldPassword, dto.NewPassword);
+            return result.Succeeded ? Result.Ok()
+                : Result.Fail(string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+
+        public async Task<Result<AuthResponseDto>> RegisterClientAsync(RegisterClientDto dto)
+        {
+            if (await _userManager.FindByEmailAsync(dto.Email) != null)
+                return Result<AuthResponseDto>.Fail("Email is already registered.");
+            if ((await _uow.Users.GetByPhoneAsync(dto.PhoneNumber)) != null)
+                return Result<AuthResponseDto>.Fail("Phone number is already registered.");
+
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                UserName = dto.Email,
+                Email = dto.Email,
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                PhoneNumber = dto.PhoneNumber,
+                Role = UserRole.Client,
+                IsActive = true,
+                LockoutEnabled = true
+            };
+            var result = await _userManager.CreateAsync(user, dto.Password);
+            if (!result.Succeeded)
+                return Result<AuthResponseDto>.Fail(
+                    string.Join(", ", result.Errors.Select(e => e.Description)));
+
+            await _userManager.AddToRoleAsync(user, nameof(UserRole.Client));
+
+            var clientProfileId = Guid.NewGuid(); // Generate a new Guid for the ClientProfile
+            await _uow.ClientProfiles.AddAsync(new ClientProfile
+            {
+                Id = clientProfileId, // Use the generated Guid as the Id for ClientProfile
+                UserId = user.Id,
+                Address = new ClientAddress
+                {
+                    Id = Guid.NewGuid(),
+                    ClientProfileId = clientProfileId,
+                    Line1 = dto.Address.Line1,
+                    Line2 = dto.Address.Line2,
+                    Locality = dto.Address.Locality,
+                    City = dto.Address.City,
+                    LGA = dto.Address.LGA,
+                    State = dto.Address.State,
+                    Country = dto.Address.Country,
+                    PostalCode = dto.Address.PostalCode,
+                    Latitude = dto.Address.Latitude,
+                    Longitude = dto.Address.Longitude
+                }
+            });
+            await _uow.Wallets.AddAsync(new Wallet { UserId = user.Id });
+            await _uow.SaveChangesAsync();
+
+            await SendEmailOtpAsync(user.Id);
+            //await _audit.LogAsync(user.Id.ToString(), user.Role.ToString(), AuditAction.Create, "User", user.Id.ToString());
+            return Result<AuthResponseDto>.Ok(await BuildAuthResponseAsync(user));
+
+        }
+
+        public async Task<Result<AuthResponseDto>> RegisterIndividualCaregiverAsync(RegisterCaregiverDto dto)
+        {
+            if (await _userManager.FindByEmailAsync(dto.Email) != null)
+                return Result<AuthResponseDto>.Fail("Email is already registered.");
+            if ((await _uow.Users.GetByPhoneAsync(dto.PhoneNumber)) != null)
+                return Result<AuthResponseDto>.Fail("Phone number is already registered.");
+            if (dto.Address == null)
+            {
+                return Result<AuthResponseDto>.Fail("Address info is required.");
+            }
+
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                UserName = dto.Email,
+                Email = dto.Email,
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                PhoneNumber = dto.PhoneNumber,
+                Role = UserRole.IndividualCaregiver,
+                IsActive = true,
+                LockoutEnabled = true
+            };
+            var result = await _userManager.CreateAsync(user, dto.Password);
+            if (!result.Succeeded)
+                return Result<AuthResponseDto>.Fail(
+                    string.Join(", ", result.Errors.Select(e => e.Description)));
+
+            await _userManager.AddToRoleAsync(user, nameof(UserRole.IndividualCaregiver));
+
+            var profileId = Guid.NewGuid(); // Generate a new Guid for the CaregiverProfile
+            var profile = new CaregiverProfile
+            {
+                Id = profileId,
+                UserId = user.Id,
+                Bio = dto.Bio,
+                YearsOfExperience = dto.YearsOfExperience,
+                HourlyRate = dto.HourlyRate,
+                DailyRate = dto.DailyRate,
+                MonthlyRate = dto.MonthlyRate,
+                GenderProvided = dto.Gender,
+                VerificationStatus = VerificationStatus.Pending,
+                Badge = BadgeLevel.New,
+                Address = new CaregiverAddress
+                {
+                    Id = Guid.NewGuid(),
+                    CaregiverProfileId = profileId,
+                    AgencyId = Guid.Empty,  // individual — no agency
+                    Line1 = dto.Address.Line1,
+                    Line2 = dto.Address.Line2,
+                    Locality = dto.Address.Locality,
+                    City = dto.Address.City,
+                    LGA = dto.Address.LGA,
+                    State = dto.Address.State,
+                    Country = dto.Address.Country,
+                    PostalCode = dto.Address.PostalCode
+                }
+
+            };
+            await _uow.CaregiverProfiles.AddAsync(profile);
+            await _uow.Wallets.AddAsync(new Wallet { UserId = user.Id });
+            await _uow.SaveChangesAsync();
+
+            if (dto.ServiceCategoryIds?.Any() == true)
+                foreach (var catId in dto.ServiceCategoryIds)
+                {
+                    await _uow.CaregiverServices.AddAsync(new CaregiverService { CaregiverProfileId = profile.Id, ServiceCategoryId = catId });
+                }
+            await _uow.SaveChangesAsync();
+
+            await SendEmailOtpAsync(user.Id);
+            //await _audit.LogAsync(user.Id.ToString(), user.Role.ToString(), AuditAction.Create, "User", user.Id.ToString());
+            return Result<AuthResponseDto>.Ok(await BuildAuthResponseAsync(user));
+
+        }
+
+        public async Task<Result<AuthResponseDto>> RegisterAgencyAdminAsync(RegisterAgencyAdminDto dto)
+        {
+            if (await _userManager.FindByEmailAsync(dto.Email) != null)
+                return Result<AuthResponseDto>.Fail("Email is already registered.");
+            if ((await _uow.Users.GetByPhoneAsync(dto.PhoneNumber)) != null)
+                return Result<AuthResponseDto>.Fail("Phone number is already registered.");
+            if (await _uow.Agencies.RegistrationNumberExistsAsync(dto.RegistrationNumber))
+                return Result<AuthResponseDto>.Fail("Agency registration number already exists.");
+
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                UserName = dto.Email,
+                Email = dto.Email,
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                PhoneNumber = dto.PhoneNumber,
+                Role = UserRole.AgencyAdmin,
+                IsActive = true,
+                LockoutEnabled = true
+            };
+            var result = await _userManager.CreateAsync(user, dto.Password);
+            if (!result.Succeeded)
+                return Result<AuthResponseDto>.Fail(
+                    string.Join(", ", result.Errors.Select(e => e.Description)));
+
+            await _userManager.AddToRoleAsync(user, nameof(UserRole.AgencyAdmin));
+
+            var agencyId = Guid.NewGuid(); // Generate a new Guid for the Agency
+            var agency = new Agency
+            {
+                Id = agencyId,
+                AgencyAdminUserId = user.Id,
+                AgencyName = dto.AgencyName,
+                RegistrationNumber = dto.RegistrationNumber,
+                Email = dto.AgencyEmail,
+                PhoneNumber = dto.AgencyPhone,
+                AgencyAddress = new AgencyAddress() {
+                    Id = Guid.NewGuid(),
+                    AgencyId = agencyId,
+                    Line1 = dto.AgencyAddress.Line1,
+                    Line2 = dto.AgencyAddress.Line2,
+                    Locality = dto.AgencyAddress.Locality,
+                    City = dto.AgencyAddress.City,
+                    LGA = dto.AgencyAddress.LGA,
+                    State = dto.AgencyAddress.State,
+                    Country = dto.AgencyAddress.Country,
+                    PostalCode = dto.AgencyAddress.PostalCode
+                },
+                Description = dto.AgencyDescription,
+                Website = dto.Website,
+                VerificationStatus = VerificationStatus.Pending,
+                IsActive = true
+            };
+
+            await _uow.Agencies.AddAsync(agency);
+            await _uow.Wallets.AddAsync(new Wallet { 
+                Id = Guid.NewGuid(), 
+                UserId = user.Id 
+            });
+            await _uow.SaveChangesAsync();
+
+            await SendEmailOtpAsync(user.Id);
+            //await _audit.LogAsync(user.Id.ToString(), user.Role.ToString(), AuditAction.Create, "Agency", agency.Id.ToString());
+            return Result<AuthResponseDto>.Ok(await BuildAuthResponseAsync(user));
+
+        }
+
+        // Called by AgencyService.AddCaregiverAsync — not directly by a controller.
+        // Exposed on IAuthService so AgencyService can reuse the token flow.
+        public async Task<Result<AuthResponseDto>> RegisterAgencyCaregiverAsync(RegisterAgencyCaregiverDto dto, Guid agencyId)
+        {
+            if (await _userManager.FindByEmailAsync(dto.Email) != null)
+                return Result<AuthResponseDto>.Fail("Email already registered");
+            if (await _uow.Users.PhoneExistsAsync(dto.PhoneNumber))
+                return Result<AuthResponseDto>.Fail("Phone number already registered");
+
+            var agency = await _uow.Agencies.GetByIdAsync(agencyId);
+            if (agency == null)
+                return Result<AuthResponseDto>.Fail("Agency not found");
+            if (agency.VerificationStatus != VerificationStatus.Approved)
+                return Result<AuthResponseDto>.Fail("Agency not yet verified");
+
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                UserName = dto.Email,
+                Email = dto.Email,
+                FirstName = dto.FirstName.Trim(),
+                LastName = dto.LastName.Trim(),
+                PhoneNumber = dto.PhoneNumber,
+                Role = UserRole.AgencyCaregiver,
+                IsActive = true,
+                LockoutEnabled = true
+            };
+            var result = await _userManager.CreateAsync(user, dto.Password);
+            if (!result.Succeeded)
+                return Result<AuthResponseDto>.Fail(
+                    string.Join("; ", result.Errors.Select(e => e.Description)));
+
+            await _userManager.AddToRoleAsync(user, nameof(UserRole.AgencyCaregiver));
+
+            var caregiverProfileId = Guid.NewGuid(); // Generate a new Guid for the CaregiverProfile
+            var profile = new CaregiverProfile
+            {
+                Id = caregiverProfileId,
+                UserId = user.Id,
+                AgencyId = agencyId,
+                Bio = dto.Bio,
+                YearsOfExperience = dto.YearsOfExperience,
+                HourlyRate = dto.HourlyRate,
+                DailyRate = dto.DailyRate,
+                MonthlyRate = dto.MonthlyRate,
+                GenderProvided = dto.Gender,
+                VerificationStatus = VerificationStatus.Pending,
+                IsAvailable = true,
+                Address = new CaregiverAddress
+                {
+                    Id = Guid.NewGuid(),
+                    CaregiverProfileId = caregiverProfileId,
+                    Line1 = dto.Address.Line1,
+                    Line2 = dto.Address.Line2,
+                    Locality = dto.Address.Locality,
+                    City = dto.Address.City,
+                    LGA = dto.Address.LGA,
+                    State = dto.Address.State,
+                    Country = dto.Address.Country,
+                    PostalCode = dto.Address.PostalCode
+                }
+            };
+            await _uow.CaregiverProfiles.AddAsync(profile);
+            await _uow.Wallets.AddAsync(new Wallet { UserId = user.Id });
+
+            foreach (var catId in dto.ServiceCategoryIds)
+                await _uow.CaregiverServices.AddAsync(new CaregiverService
+                { CaregiverProfileId = profile.Id, ServiceCategoryId = catId });
+
+            await _uow.SaveChangesAsync();
+            //await _uow.Agencies.IncrementCaregiversCountAsync(agencyId);
+
+            await _notification.SendAsync(user.Id, "Welcome to Help At Home", $"You have been added to {agency.AgencyName}.", "system", null);
+
+            return Result<AuthResponseDto>.Ok(await BuildAuthResponseAsync(user));
+        }
+
+        public Task<Result<AuthResponseDto>> RefreshTokenAsync(string refreshToken, string ipAddress)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Result> LogoutAsync(Guid userId, string refreshToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Result> SendEmailOtpAsync(Guid userId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Result> VerifyEmailOtpAsync(Guid userId, string otp)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Result> SendPhoneOtpAsync(Guid userId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Result> VerifyPhoneOtpAsync(Guid userId, string otp)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Result> ResetPasswordAsync(ResetPasswordDto dto)
+        {
+            throw new NotImplementedException();
+        }
+
+        // ── Private helpers ───────────────────────────────────────────────
+        private async Task<AuthResponseDto> BuildAuthResponseAsync(User user)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var claims = await _userManager.GetClaimsAsync(user);
+            var accessToken = _jwtService.GenerateAccessToken(user, roles, claims);
+            var refreshToken = _jwtService.GenerateRefreshToken();
+            await _uow.RefreshTokens.AddAsync(new RefreshToken
+            {
+                UserId = user.Id,
+                Token = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(30)
+            });
+            await _uow.SaveChangesAsync();
+            return new AuthResponseDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                UserId = user.Id,
+                Role = user.Role,
+                RoleName = user.Role.ToString(),
+                FullName = user.FullName,
+                Email = user.Email!,
+                IsEmailConfirmed = user.EmailConfirmed,
+                IsPhoneConfirmed = user.PhoneNumberConfirmed,
+                ExpiresAt = DateTime.UtcNow.AddHours(1)
+            };
+        }
+
+        // 6-digit numeric OTP
+        private static string GenerateOtp()
+        {
+            return Random.Shared.Next(100_000, 999_999).ToString();
+        }
+    }
+
+
+
+
+
+    /*public class AuthService2 : IAuthService
+    {
+        private readonly IUnitOfWork _uow;
+        private readonly UserManager<User> _userManager;
+        private readonly SignInManager<User> _signInManager;
+        private readonly IJwtService _jwtService;
+        private readonly INotificationService _notification;
+        private readonly IAuditLogService _audit;
+        private readonly IMapper _mapper;
+
+        public async Task<Result<AuthResponseDto>> LoginAsync(LoginDto dto, string ip)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null || user.IsDeleted)
+                return Result<AuthResponseDto>.Fail("Invalid credentials");
+            if (user.IsSuspended)
+                return Result<AuthResponseDto>.Fail("Account suspended: " + user.SuspensionReason);
+            var signIn = await _signInManager.CheckPasswordSignInAsync(
+                user, dto.Password, lockoutOnFailure: true);
+            if (signIn.IsLockedOut)
+                return Result<AuthResponseDto>.Fail($"Account locked until {user.LockoutEnd?.UtcDateTime:HH:mm UTC}.");
+            if (!signIn.Succeeded)
+                return Result<AuthResponseDto>.Fail("Invalid credentials");
+            user.LastLoginAt = DateTime.UtcNow; user.LastLoginIp = ip;
+            await _userManager.UpdateAsync(user);
+            var roles = await _userManager.GetRolesAsync(user);
+            var claims = await _userManager.GetClaimsAsync(user);
+            var accessToken = _jwtService.GenerateAccessToken(user, roles, claims);
+            var refreshToken = _jwtService.GenerateRefreshToken();
+            await _uow.RefreshTokens.AddAsync(new RefreshToken
+            {
+                UserId = user.Id,
+                Token = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(30),
+                IpAddress = ip
+            });
+            await _uow.SaveChangesAsync();
+            await _audit.LogAsync(user.Id.ToString(), user.Role.ToString(),
+                AuditAction.Login, "User", user.Id.ToString(), ipAddress: ip);
+            return Result<AuthResponseDto>.Ok(new AuthResponseDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                UserId = user.Id,
+                Role = user.Role,
+                FullName = user.FullName,
+                Email = user.Email!,
+                ExpiresAt = DateTime.UtcNow.AddHours(1)
+            });
+        }
+
+        public async Task<Result> ForgotPasswordAsync(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null) return Result.Ok();
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            await _notification.SendPasswordResetEmailAsync(user.Email!, token, user.FullName);
+            return Result.Ok();
+        }
+
+        public async Task<Result> ChangePasswordAsync(Guid userId, ChangePasswordDto dto)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null) return Result.Fail("User not found");
+            var result = await _userManager.ChangePasswordAsync(user, dto.OldPassword, dto.NewPassword);
+            return result.Succeeded ? Result.Ok()
+                : Result.Fail(string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+    }*/
+
+}
