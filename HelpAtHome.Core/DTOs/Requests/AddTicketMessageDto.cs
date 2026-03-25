@@ -9,5 +9,4 @@ namespace HelpAtHome.Core.DTOs.Requests
         public IFormFile? Attachment { get; set; }
         public bool IsInternal { get; set; } = false;  // admin-only note
     }
-
 }

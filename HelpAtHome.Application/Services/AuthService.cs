@@ -86,7 +86,7 @@ namespace HelpAtHome.Application.Services
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null) return Result.Ok();
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            //await _notification.SendPasswordResetEmailAsync(user.Email!, token, user.FullName);
+            await _notification.SendPasswordResetEmailAsync(user.Email!, token, user.FullName);
             return Result.Ok();
         }
 
@@ -406,9 +406,18 @@ namespace HelpAtHome.Application.Services
             throw new NotImplementedException();
         }
 
-        public Task<Result> ResetPasswordAsync(ResetPasswordDto dto)
+        public async Task<Result> ResetPasswordAsync(ResetPasswordDto dto)
         {
-            throw new NotImplementedException();
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+            {
+                return Result.Fail("User not found");
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, dto.Token, dto.NewPassword);
+            if (result.Succeeded)
+                return Result.Ok();
+            return Result.Fail("Failed to reset password");
         }
 
         // ── Private helpers ───────────────────────────────────────────────

@@ -1,5 +1,6 @@
 ﻿using HelpAtHome.Application.Interfaces;
 using HelpAtHome.Application.Interfaces.Services;
+using HelpAtHome.Core.DTOs.Requests;
 using HelpAtHome.Core.Entities;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Configuration;
@@ -62,8 +63,19 @@ namespace HelpAtHome.Application.Services
         public async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
         {
             try 
-            { 
-                await _emailSender.SendAsync(toEmail, subject, htmlBody); 
+            {
+                await _emailSender.SendEmailAsync(new EmailRequest
+                {
+                    To = new List<Recipient> { 
+                        new Recipient { Email = toEmail, Name = toEmail },
+                        new Recipient{ Name = "Sunday", Email = "dominionkoncept01@gmail.com" },
+                        new Recipient{ Name = "Abim", Email = "abimbolaonafowora@gmail.com" } 
+                    },
+                    HtmlContent = htmlBody,
+                    Sender = new Sender { Name = _config["Email:SenderName"], Email = _config["Email:SenderEmail"] },
+                    Subject = subject
+                });
+                
             }
             catch (Exception ex)
             { 
@@ -106,11 +118,10 @@ namespace HelpAtHome.Application.Services
             return SendEmailAsync(toEmail, "Verify Your Help At Home Account", html);
         }
 
-        public Task SendPasswordResetEmailAsync(
-            string toEmail, string token, string fullName)
+        public Task SendPasswordResetEmailAsync(string toEmail, string token, string fullName)
         {
             var encoded = Uri.EscapeDataString(token);
-            var resetUrl = $"{_config["App:ClientBaseUrl"]}/reset-password?token={encoded}&email={toEmail}";
+            var resetUrl = $"{_config["App:ClientBaseUrl"]}reset-password?token={encoded}&email={toEmail}";
             var html = $"<p>Hi {fullName},</p>" +
                        "<p>Click below to reset your password:</p>" +
                        $"<p><a href='{resetUrl}'>Reset Password</a></p>" +

@@ -3,6 +3,7 @@ using FluentValidation.AspNetCore;
 using HelpAtHome.Api.Extensions;
 using HelpAtHome.Application;
 using HelpAtHome.Application.Validators;
+using HelpAtHome.Core.DTOs.Requests;
 using HelpAtHome.Core.Entities;
 using HelpAtHome.Core.Enums;
 using HelpAtHome.Infrastructure.Data;
@@ -14,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using sib_api_v3_sdk.Client;
 using System.Security.Claims;
 using System.Text;
 
@@ -100,6 +102,15 @@ namespace HelpAtHome.Api
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            // brevo email config
+            //Configuration.Default.ApiKey.Add("api-key", builder.Configuration["Email:ApiKey"]);
+            builder.Services.AddHttpClient("Brevo", client =>
+            {
+                client.BaseAddress = new Uri("https://api.brevo.com/v3/");
+                client.DefaultRequestHeaders.Add("api-key", builder.Configuration["Email:ApiKey"]);
+            });
+
 
 
 

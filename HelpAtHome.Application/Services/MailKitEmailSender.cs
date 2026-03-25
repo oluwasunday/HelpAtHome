@@ -1,31 +1,122 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using HelpAtHome.Application.Interfaces.Services;
+using HelpAtHome.Core.DTOs.Requests;
+using HelpAtHome.Shared;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options; // Add this using directive at the top of the file
+using MimeKit;
+using Newtonsoft.Json.Linq;
+using sib_api_v3_sdk.Api;
+using sib_api_v3_sdk.Client;
+using sib_api_v3_sdk.Model;
+using System.Diagnostics;
+using System.Net.Http.Json;
 using System.Net.Mail;
-using IEmailSender = HelpAtHome.Application.Interfaces.Services.IEmailSender;
 
 namespace HelpAtHome.Application.Services
 {
     public class MailKitEmailSender : IEmailSender
     {
         private readonly IConfiguration _cfg;
-        public MailKitEmailSender(IConfiguration cfg) { _cfg = cfg; }
-        public async Task SendAsync(string to, string subject, string html)
+        private readonly EmailSettings _emailSettings;
+        private readonly HttpClient _client;
+
+        public MailKitEmailSender(IConfiguration cfg, IOptions<EmailSettings> options, IHttpClientFactory httpClientFactory)
         {
-            /*var msg = new MimeMessage();
+            _cfg = cfg;
+            _emailSettings = options.Value;
+            _client = httpClientFactory.CreateClient("Brevo");
+        }
+
+        public async System.Threading.Tasks.Task SendAsync(string to, string subject, string html)
+        {
+            var msg = new MimeMessage();
             msg.From.Add(new MailboxAddress(_cfg["Email:SenderName"], _cfg["Email:SenderEmail"]));
             msg.To.Add(MailboxAddress.Parse(to));
             msg.Subject = subject;
             msg.Body = new BodyBuilder { HtmlBody = html }.ToMessageBody();
-            using var smtp = new SmtpClient();
-            await smtp.ConnectAsync(_cfg["Email:SmtpHost"],
-                int.Parse(_cfg["Email:SmtpPort"]!), SecureSocketOptions.StartTls);
+            using var smtp = new MailKit.Net.Smtp.SmtpClient();
+            await smtp.ConnectAsync(_cfg["Email:SmtpHost"], int.Parse(_cfg["Email:SmtpPort"]!), SecureSocketOptions.StartTls);
             await smtp.AuthenticateAsync(_cfg["Email:SmtpUser"], _cfg["Email:SmtpPassword"]);
             await smtp.SendAsync(msg);
-            await smtp.DisconnectAsync(true);*/
+            await smtp.DisconnectAsync(true);
+        }
+
+        public async Task<Result<string>> SendEmailAsync(EmailRequestDto mailRequest)
+        {
+            try
+            {
+                var apiInstance = new TransactionalEmailsApi();
+                string SenderName = _emailSettings.DisplayName;
+                string SenderEmail = _emailSettings.Mail;
+                SendSmtpEmailSender Email = new SendSmtpEmailSender(SenderName, SenderEmail);
+
+                SendSmtpEmailTo receiver1 = new SendSmtpEmailTo(mailRequest.ToEmail, mailRequest.ToEmail);
+                List<SendSmtpEmailTo> To = new List<SendSmtpEmailTo>();
+                To.Add(receiver1);
+
+
+                string HtmlContent = null;
+                string TextContent = mailRequest.Body;
+                
+                try
+                {
+                    var sendSmtpEmail = new SendSmtpEmail(Email, To, null, null, HtmlContent, TextContent, mailRequest.Subject);
+                    CreateSmtpEmail result = apiInstance.SendTransacEmail(sendSmtpEmail);
+                    Debug.WriteLine(result.ToJson());
+                    Console.WriteLine(result.ToJson());
+
+                    return Result<string>.Ok("Mail successful!");
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e.Message);
+                    Console.WriteLine(e.Message);
+                    //Console.ReadLine();
+
+                    return Result<string>.Fail("failed to send mail");
+                }
+            }
+            catch (Exception e)
+            {
+                return Result<string>.Fail($"something went wrong - {e}");
+            }
+        }
+
+        public async Task<Result<string>> SendEmailAsync(EmailRequest requestDto)
+        {
+            try
+            {
+                try
+                {
+                    var payload = new
+                    {
+                        htmlContent = requestDto.HtmlContent,
+                        sender = requestDto.Sender,
+                        subject = requestDto.Subject,
+                        to = requestDto.To,
+                    };
+
+                    var response = await _client.PostAsJsonAsync("smtp/email", payload);
+                    response.EnsureSuccessStatusCode();
+
+                    var result = await response.Content.ReadAsStringAsync();
+
+                    return Result<string>.Ok("Mail successful!");
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e.Message);
+                    return Result<string>.Fail("failed to send mail");
+                }
+            }
+            catch (Exception e)
+            {
+                return Result<string>.Fail($"something went wrong - {e}");
+            }
         }
     }
-
-
-
 
 
 

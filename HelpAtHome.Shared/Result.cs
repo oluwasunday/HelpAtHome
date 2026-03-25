@@ -14,5 +14,4 @@
         public static Result<T> Ok(T data) => new() { IsSuccess = true, Data = data };
         public new static Result<T> Fail(string msg) => new() { IsSuccess = false, ErrorMessage = msg };
     }
-
 }

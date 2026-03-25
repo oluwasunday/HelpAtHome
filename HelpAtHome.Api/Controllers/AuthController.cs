@@ -78,6 +78,10 @@ namespace HelpAtHome.Api.Controllers
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                //
+            }
             var result = await _authService.ResetPasswordAsync(dto);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }

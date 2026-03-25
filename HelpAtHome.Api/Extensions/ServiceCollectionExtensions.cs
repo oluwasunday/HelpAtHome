@@ -7,6 +7,7 @@ using HelpAtHome.Application.Interfaces.Services;
 using HelpAtHome.Application.Repositories;
 using HelpAtHome.Application.Services;
 using HelpAtHome.Application.Validators;
+using HelpAtHome.Core.DTOs.Requests;
 using HelpAtHome.Core.Entities;
 using HelpAtHome.Infrastructure.Data;
 using HelpAtHome.Infrastructure.MongoDB;
@@ -74,7 +75,11 @@ namespace HelpAtHome.Api.Extensions
             services.AddScoped<ITransactionRepository, TransactionRepository>();
             services.AddScoped<ICaregiverServiceRepository, CaregiverServiceRepository>();
             services.AddScoped<IReviewRepository, ReviewRepository>();
+
+            //configure email settings
+            services.Configure<EmailSettings>(config.GetSection("EmailSettings"));
             services.AddScoped<INotificationRepository, NotificationRepository>();
+
             services.AddScoped<ISupportTicketRepository, SupportTicketRepository>();
             services.AddScoped<IEmergencyAlertRepository, EmergencyAlertRepository>();
             services.AddScoped<IFamilyAccessRepository, FamilyAccessRepository>();
