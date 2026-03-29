@@ -1,5 +1,6 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using HelpAtHome.Api.Configuration;
 using HelpAtHome.Api.Extensions;
 using HelpAtHome.Api.Middleware;
 using HelpAtHome.Application;
@@ -19,7 +20,12 @@ using Serilog;
 using System.Security.Claims;
 using System.Text;
 
-// ── Bootstrap logger — captures startup errors before full Serilog is configured ──
+// ── Step 1: Load .env file into process environment variables ───────────────
+// Must happen before CreateBuilder so the .NET config system picks them up.
+// System/OS env vars are never overwritten (production always wins).
+EnvironmentLoader.Load();
+
+// ── Step 2: Bootstrap logger — captures startup errors ──────────────────────
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateBootstrapLogger();
@@ -28,6 +34,11 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
     var config = builder.Configuration;
+
+    // ── Step 3: Validate all required config values are present ─────────────
+    // Fails immediately with a clear list of every missing key if anything
+    // is absent — prevents cryptic runtime errors deep in the app.
+    ConfigurationValidator.Validate(config);
 
     // ── Serilog — replaces the default Microsoft logging pipeline ──────────
     builder.Host.UseSerilog((ctx, services, cfg) => cfg

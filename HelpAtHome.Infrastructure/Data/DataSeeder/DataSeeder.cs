@@ -139,9 +139,7 @@ namespace HelpAtHome.Infrastructure.Data.DataSeeder
         public static readonly Guid CgAddr5Id = Guid.Parse("aaaabbbb-0005-0005-0005-000000000005");
 
         // ── Master entry point ────────────────────────────────────────────
-        public static async Task SeedAllAsync(AppDbContext db,
-            Microsoft.AspNetCore.Identity.UserManager<User> userMgr,
-            Microsoft.AspNetCore.Identity.RoleManager<IdentityRole<Guid>> roleMgr,
+        public static async Task SeedAllAsync(AppDbContext db, UserManager<User> userMgr, RoleManager<IdentityRole<Guid>> roleMgr,
             MongoDbContext mongo, MongoDbSettings mongoSettings)
         {
             // Order matters — respect FK dependencies

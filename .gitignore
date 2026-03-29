@@ -423,5 +423,9 @@ appsettings.local.json
 appsettings.Production.json
 appsettings.Staging.json
 
+# Local environment variable files (*.env already covers these, being explicit)
+.env
+**/.env
+
 # Serilog rolling log files
 Logs/

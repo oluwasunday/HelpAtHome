@@ -43,11 +43,13 @@ namespace HelpAtHome.Application
 
             // ── Booking ───────────────────────────────────────────────
             CreateMap<Booking, BookingDto>()
-                .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
-                .ForMember(d => d.Frequency, o => o.MapFrom(s => s.Frequency.ToString()))
+                .ForMember(d => d.Status,      o => o.MapFrom(s => s.Status.ToString()))
+                .ForMember(d => d.Frequency,   o => o.MapFrom(s => s.Frequency.ToString()))
                 .ForMember(d => d.PaymentStatus, o => o.MapFrom(s => s.PaymentStatus.ToString()))
                 .ForMember(d => d.ServiceCategory,
-                    o => o.MapFrom(s => s.ServiceCategory != null ? s.ServiceCategory.Name : string.Empty));
+                    o => o.MapFrom(s => s.ServiceCategory != null ? s.ServiceCategory.Name : string.Empty))
+                .ForMember(d => d.Caregiver, o => o.MapFrom(s => s.CaregiverProfile))
+                .ForMember(d => d.Client,    o => o.MapFrom(s => s.ClientProfile != null ? s.ClientProfile.User : null));
             CreateMap<Booking, BookingDetailDto>();
 
             // ── Wallet / Transaction ──────────────────────────────────
