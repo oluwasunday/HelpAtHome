@@ -422,3 +422,6 @@ firebase-service-account.json
 appsettings.local.json
 appsettings.Production.json
 appsettings.Staging.json
+
+# Serilog rolling log files
+Logs/
