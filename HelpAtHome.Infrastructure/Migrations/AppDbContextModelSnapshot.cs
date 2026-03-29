@@ -132,6 +132,9 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.HasIndex("RegistrationNumber")
                         .IsUnique();
 
+                    b.HasIndex("AgencyAdminUserId", "RegistrationNumber", "Email")
+                        .IsUnique();
+
                     b.ToTable("Agencies", (string)null);
                 });
 
@@ -451,12 +454,23 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("DocumentPhotoUrl")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<int>("GenderProvided")
                         .HasColumnType("int");
 
                     b.Property<decimal>("HourlyRate")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("IdNumber")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("IdType")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("tinyint(1)");
@@ -473,6 +487,14 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.Property<decimal>("MonthlyRate")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("NextOfKinName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("NextOfKinPhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("RejectionReason")
                         .HasColumnType("longtext");
@@ -653,10 +675,7 @@ namespace HelpAtHome.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<int>("CaregiverGenderPreference")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ClientAge")
+                    b.Property<int>("CareGiverGenderPreference")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -664,11 +683,26 @@ namespace HelpAtHome.Infrastructure.Migrations
                         .HasColumnType("datetime(6)")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
+                    b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("char(36)");
+
+                    b.Property<string>("EmergencyContactName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("EmergencyContactPhoneNumber")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Gender")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
@@ -677,10 +711,16 @@ namespace HelpAtHome.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("varchar(2000)");
 
+                    b.Property<int>("RelationToRecipient")
+                        .HasColumnType("int");
+
                     b.Property<bool>("RequireVerifiedOnly")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
+
+                    b.Property<int>("ServicesNeeded")
+                        .HasColumnType("int");
 
                     b.Property<string>("SpecialNotes")
                         .HasMaxLength(2000)
@@ -1729,6 +1769,79 @@ namespace HelpAtHome.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Wallets", (string)null);
+                });
+
+            modelBuilder.Entity("HelpAtHome.Core.Entities.WalletTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("AgencyId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal>("Amount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("BalanceAfter")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("BalanceBefore")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateOnly>("TransactionDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("TransactionType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<Guid>("WalletId")
+                        .HasMaxLength(36)
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Reference")
+                        .IsUnique();
+
+                    b.ToTable("WalletTransactions", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>

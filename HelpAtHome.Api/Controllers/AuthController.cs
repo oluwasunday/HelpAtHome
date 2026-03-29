@@ -68,6 +68,33 @@ namespace HelpAtHome.Api.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
+        [Authorize]
+        [HttpPost("resend-email-otp")]
+        public async Task<IActionResult> ResendEmailOtp()
+        {
+            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var result = await _authService.SendEmailOtpAsync(userId);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [Authorize]
+        [HttpPost("send-phone-otp")]
+        public async Task<IActionResult> SendPhoneOtp()
+        {
+            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var result = await _authService.SendPhoneOtpAsync(userId);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [Authorize]
+        [HttpPost("verify-phone")]
+        public async Task<IActionResult> VerifyPhone([FromBody] VerifyOtpDto dto)
+        {
+            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var result = await _authService.VerifyPhoneOtpAsync(userId, dto.Otp);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
         {

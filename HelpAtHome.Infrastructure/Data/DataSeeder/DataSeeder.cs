@@ -570,12 +570,18 @@ namespace HelpAtHome.Infrastructure.Data.DataSeeder
                     UserId = Client1Id,
                     SpecialNotes = "Elderly woman (74 yrs). Lives alone in Ikoyi. Has mild arthritis. Prefers female caregivers.",
                     MedicalConditions = "Arthritis, hypertension",
-                    ClientAge = 74,
-                    CaregiverGenderPreference = Gender.Female,
+                    DateOfBirth = new DateTime(1978, 2, 23, 13, 45, 33),
+                    Gender = Gender.Female,
+                    CareGiverGenderPreference = PreferedGender.NoPreference,
                     RequireVerifiedOnly = true,
                     WalletBalance = 45000m,
                     CreatedAt = DateTime.UtcNow.AddMonths(-5),
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    ServicesNeeded = Services.CanCareForBedridden | Services.CanProvideCompanionship | Services.HasFirstAidCertificate,
+                    EmergencyContactName = "Kabiru Dada",
+                    EmergencyContactPhoneNumber = "+2348088888881",
+                    Frequency = Frequency.Daily,
+                    RelationToRecipient = RelationToRecipient.Self
                 },
                 new ClientProfile
                 {
@@ -583,12 +589,18 @@ namespace HelpAtHome.Infrastructure.Data.DataSeeder
                     UserId = Client2Id,
                     SpecialNotes = "Retired man (78 yrs). Recovering from stroke. Needs mobility assistance and medication reminders.",
                     MedicalConditions = "Stroke recovery, hypertension",
-                    ClientAge = 78,
-                    CaregiverGenderPreference = Gender.Male,
+                    DateOfBirth = new DateTime(1961, 8, 21, 13, 45, 33),
+                    Gender = Gender.Male,
+                    CareGiverGenderPreference = PreferedGender.NoPreference,
                     RequireVerifiedOnly = true,
                     WalletBalance = 30000m,
                     CreatedAt = DateTime.UtcNow.AddMonths(-4),
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    ServicesNeeded = Services.CanCareForBedridden | Services.CanProvideCompanionship | Services.CanDoErrands | Services.HasFirstAidCertificate,
+                    EmergencyContactName = "Tolu Sanni",
+                    EmergencyContactPhoneNumber = "+2348088888882",
+                    Frequency = Frequency.Weekly,
+                    RelationToRecipient = RelationToRecipient.Self
                 },
                 new ClientProfile
                 {
@@ -596,24 +608,36 @@ namespace HelpAtHome.Infrastructure.Data.DataSeeder
                     UserId = Client3Id,
                     SpecialNotes = "Elderly woman (68 yrs). Wants help with cooking and house cleaning twice a week.",
                     MedicalConditions = "Diabetes",
-                    ClientAge = 68,
-                    CaregiverGenderPreference = Gender.Female,
+                    DateOfBirth = new DateTime(1990, 12, 13, 13, 45, 33),
+                    Gender = Gender.Female,
+                    CareGiverGenderPreference = PreferedGender.Female,
                     RequireVerifiedOnly = false,
                     WalletBalance = 20000m,
                     CreatedAt = DateTime.UtcNow.AddMonths(-2),
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    ServicesNeeded = Services.CanCareForBedridden | Services.CanProvideCompanionship | Services.CanDoErrands | Services.HasFirstAidCertificate | Services.CanCook,
+                    EmergencyContactName = "Igbo Edo",
+                    EmergencyContactPhoneNumber = "+2348088888883",
+                    Frequency = Frequency.OneTime,
+                    RelationToRecipient = RelationToRecipient.Mother
                 },
                 new ClientProfile
                 {
                     Id = ClientProfile4Id,
                     UserId = Client4Id,
                     SpecialNotes = "Active retired man (70 yrs). Needs help with errands and market runs.",
-                    ClientAge = 70,
-                    CaregiverGenderPreference = Gender.Male,
+                    DateOfBirth = new DateTime(1971, 11, 29, 13, 45, 33),
+                    Gender = Gender.Male,
+                    CareGiverGenderPreference = PreferedGender.Male,
                     RequireVerifiedOnly = false,
                     WalletBalance = 55000m,
                     CreatedAt = DateTime.UtcNow.AddMonths(-1),
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    ServicesNeeded = Services.CanCareForBedridden | Services.CanProvideCompanionship | Services.CanDoErrands | Services.HasFirstAidCertificate | Services.CanAdministerMedication,
+                    EmergencyContactName = "Ilorin Ibukun",
+                    EmergencyContactPhoneNumber = "+2348088888884",
+                    Frequency = Frequency.Daily,
+                    RelationToRecipient = RelationToRecipient.Self
                 }
             );
             await db.SaveChangesAsync();

@@ -33,7 +33,7 @@ namespace HelpAtHome.Application
             // ── ClientProfile ─────────────────────────────────────────
             CreateMap<ClientProfile, ClientProfileDto>()
                 .ForMember(d => d.CaregiverGenderPreference,
-                    o => o.MapFrom(s => s.CaregiverGenderPreference.ToString()));
+                    o => o.MapFrom(s => s.Gender.ToString()));
 
             // ── Agency ───────────────────────────────────────────────
             CreateMap<Agency, AgencySummaryDto>()

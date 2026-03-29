@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HelpAtHome.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260322141446_initial")]
-    partial class initial
+    [Migration("20260327180227_moreCareGiverFields")]
+    partial class moreCareGiverFields
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,10 +31,8 @@ namespace HelpAtHome.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
+                    b.Property<Guid>("AgencyAddressId")
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid>("AgencyAdminUserId")
                         .HasColumnType("char(36)");
@@ -49,11 +47,6 @@ namespace HelpAtHome.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(300)
                         .HasColumnType("varchar(300)");
-
-                    b.Property<string>("City")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
 
                     b.Property<decimal>("CommissionRate")
                         .ValueGeneratedOnAdd()
@@ -103,11 +96,6 @@ namespace HelpAtHome.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
                     b.Property<int>("TotalCaregiversCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
@@ -147,7 +135,88 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.HasIndex("RegistrationNumber")
                         .IsUnique();
 
+                    b.HasIndex("AgencyAdminUserId", "RegistrationNumber", "Email")
+                        .IsUnique();
+
                     b.ToTable("Agencies", (string)null);
+                });
+
+            modelBuilder.Entity("HelpAtHome.Core.Entities.AgencyAddress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("AgencyId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasDefaultValue("Nigeria");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("LGA")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Line1")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Line2")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Locality")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgencyId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_AgencyAddresses_AgencyId");
+
+                    b.HasIndex("State")
+                        .HasDatabaseName("IX_AgencyAddresses_State");
+
+                    b.ToTable("AgencyAddresses", (string)null);
                 });
 
             modelBuilder.Entity("HelpAtHome.Core.Entities.Booking", b =>
@@ -270,6 +339,88 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.ToTable("Bookings");
                 });
 
+            modelBuilder.Entity("HelpAtHome.Core.Entities.CaregiverAddress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("AgencyId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("CaregiverProfileId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasDefaultValue("Nigeria");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("LGA")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Line1")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Line2")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Locality")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgencyId");
+
+                    b.HasIndex("CaregiverProfileId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_CaregiverAddresses_CaregiverProfileId");
+
+                    b.HasIndex("State", "City", "LGA")
+                        .HasDatabaseName("IX_CaregiverAddresses_Location");
+
+                    b.ToTable("CaregiverAddresses", (string)null);
+                });
+
             modelBuilder.Entity("HelpAtHome.Core.Entities.CaregiverProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -306,12 +457,23 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("DocumentPhotoUrl")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<int>("GenderProvided")
                         .HasColumnType("int");
 
                     b.Property<decimal>("HourlyRate")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("IdNumber")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("IdType")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("tinyint(1)");
@@ -328,6 +490,14 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.Property<decimal>("MonthlyRate")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("NextOfKinName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("NextOfKinPhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("RejectionReason")
                         .HasColumnType("longtext");
@@ -417,22 +587,28 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.ToTable("CaregiverServices", (string)null);
                 });
 
-            modelBuilder.Entity("HelpAtHome.Core.Entities.ClientProfile", b =>
+            modelBuilder.Entity("HelpAtHome.Core.Entities.ClientAddress", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<int>("CaregiverGenderPreference")
-                        .HasColumnType("int");
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
-                    b.Property<int?>("ClientAge")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ClientProfileId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasDefaultValue("Nigeria");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime(6)")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime(6)");
@@ -441,16 +617,113 @@ namespace HelpAtHome.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("LGA")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<decimal?>("Latitude")
+                        .HasPrecision(10, 7)
+                        .HasColumnType("decimal(10,7)");
+
+                    b.Property<string>("Line1")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Line2")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Locality")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<decimal?>("Longitude")
+                        .HasPrecision(10, 7)
+                        .HasColumnType("decimal(10,7)");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientProfileId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ClientAddresses_ClientProfileId");
+
+                    b.HasIndex("State")
+                        .HasDatabaseName("IX_ClientAddresses_State");
+
+                    b.ToTable("ClientAddresses", (string)null);
+                });
+
+            modelBuilder.Entity("HelpAtHome.Core.Entities.ClientProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("CareGiverGenderPreference")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("EmergencyContactName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("EmergencyContactPhoneNumber")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Gender")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("MedicalConditions")
                         .HasMaxLength(2000)
                         .HasColumnType("varchar(2000)");
 
+                    b.Property<int>("RelationToRecipient")
+                        .HasColumnType("int");
+
                     b.Property<bool>("RequireVerifiedOnly")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
+
+                    b.Property<int>("ServicesNeeded")
+                        .HasColumnType("int");
 
                     b.Property<string>("SpecialNotes")
                         .HasMaxLength(2000)
@@ -1238,12 +1511,6 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
-                    b.Property<string>("Address")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("City")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("longtext");
@@ -1284,9 +1551,6 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.Property<bool>("IsSuspended")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<string>("LGA")
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime(6)");
 
@@ -1298,17 +1562,11 @@ namespace HelpAtHome.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
-                    b.Property<decimal?>("Latitude")
-                        .HasColumnType("decimal(65,30)");
-
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<decimal?>("Longitude")
-                        .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -1334,9 +1592,6 @@ namespace HelpAtHome.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("SecurityStamp")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("State")
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("SuspendedUntil")
@@ -1519,6 +1774,79 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.ToTable("Wallets", (string)null);
                 });
 
+            modelBuilder.Entity("HelpAtHome.Core.Entities.WalletTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("AgencyId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal>("Amount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("BalanceAfter")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("BalanceBefore")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateOnly>("TransactionDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("TransactionType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<Guid>("WalletId")
+                        .HasMaxLength(36)
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Reference")
+                        .IsUnique();
+
+                    b.ToTable("WalletTransactions", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1660,6 +1988,17 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.Navigation("AgencyAdmin");
                 });
 
+            modelBuilder.Entity("HelpAtHome.Core.Entities.AgencyAddress", b =>
+                {
+                    b.HasOne("HelpAtHome.Core.Entities.Agency", "Agency")
+                        .WithOne("AgencyAddress")
+                        .HasForeignKey("HelpAtHome.Core.Entities.AgencyAddress", "AgencyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Agency");
+                });
+
             modelBuilder.Entity("HelpAtHome.Core.Entities.Booking", b =>
                 {
                     b.HasOne("HelpAtHome.Core.Entities.CaregiverProfile", "CaregiverProfile")
@@ -1685,6 +2024,24 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.Navigation("ClientProfile");
 
                     b.Navigation("ServiceCategory");
+                });
+
+            modelBuilder.Entity("HelpAtHome.Core.Entities.CaregiverAddress", b =>
+                {
+                    b.HasOne("HelpAtHome.Core.Entities.Agency", "Agency")
+                        .WithMany()
+                        .HasForeignKey("AgencyId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("HelpAtHome.Core.Entities.CaregiverProfile", "CaregiverProfile")
+                        .WithOne("Address")
+                        .HasForeignKey("HelpAtHome.Core.Entities.CaregiverAddress", "CaregiverProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Agency");
+
+                    b.Navigation("CaregiverProfile");
                 });
 
             modelBuilder.Entity("HelpAtHome.Core.Entities.CaregiverProfile", b =>
@@ -1721,6 +2078,17 @@ namespace HelpAtHome.Infrastructure.Migrations
                     b.Navigation("CaregiverProfile");
 
                     b.Navigation("ServiceCategory");
+                });
+
+            modelBuilder.Entity("HelpAtHome.Core.Entities.ClientAddress", b =>
+                {
+                    b.HasOne("HelpAtHome.Core.Entities.ClientProfile", "ClientProfile")
+                        .WithOne("Address")
+                        .HasForeignKey("HelpAtHome.Core.Entities.ClientAddress", "ClientProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClientProfile");
                 });
 
             modelBuilder.Entity("HelpAtHome.Core.Entities.ClientProfile", b =>
@@ -1975,6 +2343,8 @@ namespace HelpAtHome.Infrastructure.Migrations
 
             modelBuilder.Entity("HelpAtHome.Core.Entities.Agency", b =>
                 {
+                    b.Navigation("AgencyAddress");
+
                     b.Navigation("Caregivers");
 
                     b.Navigation("Documents");
@@ -1991,6 +2361,8 @@ namespace HelpAtHome.Infrastructure.Migrations
 
             modelBuilder.Entity("HelpAtHome.Core.Entities.CaregiverProfile", b =>
                 {
+                    b.Navigation("Address");
+
                     b.Navigation("Bookings");
 
                     b.Navigation("CaregiverServices");
@@ -2002,6 +2374,8 @@ namespace HelpAtHome.Infrastructure.Migrations
 
             modelBuilder.Entity("HelpAtHome.Core.Entities.ClientProfile", b =>
                 {
+                    b.Navigation("Address");
+
                     b.Navigation("Bookings");
 
                     b.Navigation("EmergencyAlerts");

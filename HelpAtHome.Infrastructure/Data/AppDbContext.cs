@@ -37,6 +37,7 @@ namespace HelpAtHome.Infrastructure.Data
         public DbSet<ClientAddress> ClientAddresses { get; set; }
         public DbSet<AgencyAddress> AgencyAddresses { get; set; }
         public DbSet<CaregiverAddress> CaregiverAddresses { get; set; }
+        public DbSet<WalletTransaction> WalletTransactions { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

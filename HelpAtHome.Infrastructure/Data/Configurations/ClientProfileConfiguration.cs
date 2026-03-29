@@ -74,7 +74,6 @@ namespace HelpAtHome.Infrastructure.Data.Configurations
             builder.Property(c => c.SpecialNotes).HasMaxLength(2000);
             builder.Property(c => c.MedicalConditions).HasMaxLength(2000);
             builder.Property(c => c.WalletBalance).HasPrecision(18, 2);
-            builder.Property(c => c.CaregiverGenderPreference).HasConversion<int>();
 
             builder.Property(c => c.WalletBalance).HasDefaultValue(0m);
             builder.Property(c => c.RequireVerifiedOnly).HasDefaultValue(false);

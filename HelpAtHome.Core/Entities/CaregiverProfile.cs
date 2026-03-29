@@ -27,6 +27,13 @@ namespace HelpAtHome.Core.Entities
         public bool IsBackgroundChecked { get; set; } = false;
         public DateTime? BackgroundCheckDate { get; set; }
 
+        // verification and safety
+        public DocumentType IdType { get; set; }
+        public string IdNumber { get; set; }
+        public string DocumentPhotoUrl { get; set; }
+        public string NextOfKinName { get; set; }
+        public string NextOfKinPhoneNumber { get; set; }
+
         // Navigation
         public CaregiverAddress? Address { get; set; }
         public User User { get; set; }

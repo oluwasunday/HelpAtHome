@@ -45,16 +45,6 @@ namespace HelpAtHome.Infrastructure.Migrations
                     Role = table.Column<int>(type: "int", nullable: false),
                     ProfilePhotoUrl = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Address = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    State = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    City = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LGA = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Latitude = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
-                    Longitude = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IsSuspended = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     SuspensionReason = table.Column<string>(type: "longtext", nullable: true)
@@ -126,6 +116,34 @@ namespace HelpAtHome.Infrastructure.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "WalletTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    WalletId = table.Column<Guid>(type: "char(36)", maxLength: 36, nullable: false, collation: "ascii_general_ci"),
+                    AgencyId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    TransactionType = table.Column<int>(type: "int", nullable: false),
+                    BalanceBefore = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    BalanceAfter = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    TransactionDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    Reference = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Description = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP(6)"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP(6)"),
+                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WalletTransactions", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -163,12 +181,6 @@ namespace HelpAtHome.Infrastructure.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PhoneNumber = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Address = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    State = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    City = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     LogoUrl = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Description = table.Column<string>(type: "varchar(3000)", maxLength: 3000, nullable: true)
@@ -182,6 +194,7 @@ namespace HelpAtHome.Infrastructure.Migrations
                     AgencyCommissionRate = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false, defaultValue: 10m),
                     WalletBalance = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     TotalCaregiversCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    AgencyAddressId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP(6)"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP(6)"),
                     IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
@@ -307,10 +320,18 @@ namespace HelpAtHome.Infrastructure.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     MedicalConditions = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    ClientAge = table.Column<int>(type: "int", nullable: true),
-                    CaregiverGenderPreference = table.Column<int>(type: "int", nullable: false),
+                    Gender = table.Column<int>(type: "int", nullable: false),
                     RequireVerifiedOnly = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
                     WalletBalance = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    ServicesNeeded = table.Column<int>(type: "int", nullable: false),
+                    Frequency = table.Column<int>(type: "int", nullable: false),
+                    CareGiverGenderPreference = table.Column<int>(type: "int", nullable: false),
+                    RelationToRecipient = table.Column<int>(type: "int", nullable: false),
+                    DateOfBirth = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    EmergencyContactName = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EmergencyContactPhoneNumber = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP(6)"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP(6)"),
                     IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
@@ -462,6 +483,46 @@ namespace HelpAtHome.Infrastructure.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "AgencyAddresses",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Line1 = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Line2 = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Locality = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    City = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LGA = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    State = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Country = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, defaultValue: "Nigeria")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PostalCode = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AgencyId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AgencyAddresses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AgencyAddresses_Agencies_AgencyId",
+                        column: x => x.AgencyId,
+                        principalTable: "Agencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "CaregiverProfiles",
                 columns: table => new
                 {
@@ -511,6 +572,48 @@ namespace HelpAtHome.Infrastructure.Migrations
                         name: "FK_CaregiverProfiles_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "ClientAddresses",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Line1 = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Line2 = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Locality = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    City = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LGA = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    State = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Country = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, defaultValue: "Nigeria")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PostalCode = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Latitude = table.Column<decimal>(type: "decimal(10,7)", precision: 10, scale: 7, nullable: true),
+                    Longitude = table.Column<decimal>(type: "decimal(10,7)", precision: 10, scale: 7, nullable: true),
+                    ClientProfileId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ClientAddresses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ClientAddresses_ClientProfiles_ClientProfileId",
+                        column: x => x.ClientProfileId,
+                        principalTable: "ClientProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -621,6 +724,53 @@ namespace HelpAtHome.Infrastructure.Migrations
                         name: "FK_Bookings_ServiceCategories_ServiceCategoryId",
                         column: x => x.ServiceCategoryId,
                         principalTable: "ServiceCategories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "CaregiverAddresses",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Line1 = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Line2 = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Locality = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    City = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LGA = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    State = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Country = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, defaultValue: "Nigeria")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PostalCode = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AgencyId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    CaregiverProfileId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedBy = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CaregiverAddresses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CaregiverAddresses_Agencies_AgencyId",
+                        column: x => x.AgencyId,
+                        principalTable: "Agencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_CaregiverAddresses_CaregiverProfiles_CaregiverProfileId",
+                        column: x => x.CaregiverProfileId,
+                        principalTable: "CaregiverProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -937,6 +1087,12 @@ namespace HelpAtHome.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Agencies_AgencyAdminUserId_RegistrationNumber_Email",
+                table: "Agencies",
+                columns: new[] { "AgencyAdminUserId", "RegistrationNumber", "Email" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Agencies_Email",
                 table: "Agencies",
                 column: "Email",
@@ -947,6 +1103,17 @@ namespace HelpAtHome.Infrastructure.Migrations
                 table: "Agencies",
                 column: "RegistrationNumber",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AgencyAddresses_AgencyId",
+                table: "AgencyAddresses",
+                column: "AgencyId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AgencyAddresses_State",
+                table: "AgencyAddresses",
+                column: "State");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -1024,6 +1191,22 @@ namespace HelpAtHome.Infrastructure.Migrations
                 column: "ServiceCategoryId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CaregiverAddresses_AgencyId",
+                table: "CaregiverAddresses",
+                column: "AgencyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CaregiverAddresses_CaregiverProfileId",
+                table: "CaregiverAddresses",
+                column: "CaregiverProfileId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CaregiverAddresses_Location",
+                table: "CaregiverAddresses",
+                columns: new[] { "State", "City", "LGA" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CaregiverProfiles_AgencyId",
                 table: "CaregiverProfiles",
                 column: "AgencyId");
@@ -1044,6 +1227,17 @@ namespace HelpAtHome.Infrastructure.Migrations
                 name: "IX_CaregiverServices_ServiceCategoryId",
                 table: "CaregiverServices",
                 column: "ServiceCategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClientAddresses_ClientProfileId",
+                table: "ClientAddresses",
+                column: "ClientProfileId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClientAddresses_State",
+                table: "ClientAddresses",
+                column: "State");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ClientProfiles_IsDeleted",
@@ -1258,11 +1452,20 @@ namespace HelpAtHome.Infrastructure.Migrations
                 table: "Wallets",
                 column: "UserId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletTransactions_Reference",
+                table: "WalletTransactions",
+                column: "Reference",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AgencyAddresses");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
@@ -1279,7 +1482,13 @@ namespace HelpAtHome.Infrastructure.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "CaregiverAddresses");
+
+            migrationBuilder.DropTable(
                 name: "CaregiverServices");
+
+            migrationBuilder.DropTable(
+                name: "ClientAddresses");
 
             migrationBuilder.DropTable(
                 name: "EmergencyAlerts");
@@ -1307,6 +1516,9 @@ namespace HelpAtHome.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "VerificationDocuments");
+
+            migrationBuilder.DropTable(
+                name: "WalletTransactions");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

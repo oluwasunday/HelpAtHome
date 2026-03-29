@@ -7,10 +7,18 @@ namespace HelpAtHome.Core.Entities
         public Guid UserId { get; set; }
         public string? SpecialNotes { get; set; }   // e.g., "has high BP, needs calm caregiver"
         public string? MedicalConditions { get; set; }
-        public int? ClientAge { get; set; }
-        public Gender CaregiverGenderPreference { get; set; } = Gender.Male;
+        public Gender Gender { get; set; } = Gender.Male;
         public bool RequireVerifiedOnly { get; set; } = false;
         public decimal WalletBalance { get; set; } = 0;
+        public Services ServicesNeeded { get; set; }
+        public Frequency Frequency { get; set; } = Frequency.None;
+        public PreferedGender CareGiverGenderPreference { get; set; } = PreferedGender.NoPreference;
+        public RelationToRecipient RelationToRecipient { get; set; } = RelationToRecipient.Self;
+        public DateTime DateOfBirth { get; set; }
+
+        // Emergency Contact
+        public string? EmergencyContactName { get; set; }
+        public string? EmergencyContactPhoneNumber { get; set; }
 
         // Navigation
         public ClientAddress? Address { get; set; }

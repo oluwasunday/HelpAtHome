@@ -21,7 +21,8 @@ namespace HelpAtHome.Infrastructure.Repositories
 
         public Task<User?> GetByPhoneAsync(string phone)
         {
-            throw new NotImplementedException();
+            var user = _context.Users.FirstOrDefault(x => x.PhoneNumber == phone);
+            return Task.FromResult(user);
         }
 
         public Task<IEnumerable<User>> GetByRoleAsync(UserRole role)

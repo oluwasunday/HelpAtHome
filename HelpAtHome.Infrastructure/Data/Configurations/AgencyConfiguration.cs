@@ -30,8 +30,7 @@ namespace HelpAtHome.Infrastructure.Data.Configurations
             builder.Property(a => a.WalletBalance).HasPrecision(18, 2);
 
             // ── Enum & defaults ──────────────────────────────────────────
-            builder.Property(a => a.VerificationStatus).HasConversion<int>()
-                .HasDefaultValue(VerificationStatus.Pending);
+            builder.Property(a => a.VerificationStatus).HasDefaultValue(VerificationStatus.Pending);
             builder.Property(a => a.IsActive).HasDefaultValue(true);
             builder.Property(a => a.CommissionRate).HasDefaultValue(15m);
             builder.Property(a => a.AgencyCommissionRate).HasDefaultValue(10m);
@@ -44,6 +43,7 @@ namespace HelpAtHome.Infrastructure.Data.Configurations
             builder.HasIndex(a => a.RegistrationNumber).IsUnique();
             builder.HasIndex(a => a.Email).IsUnique();
             builder.HasIndex(a => a.AgencyAdminUserId).IsUnique();
+            builder.HasIndex(a => new { a.AgencyAdminUserId, a.RegistrationNumber, a.Email }).IsUnique();
             //builder.HasIndex(a => a.VerificationStatus);
             //builder.HasIndex(a => a.IsDeleted);
 
