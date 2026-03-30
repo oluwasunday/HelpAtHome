@@ -36,10 +36,11 @@ namespace HelpAtHome.Api.Extensions
             services.AddSingleton<MongoDbContext>();
 
             // ─── Redis ──────────────────────────────────────────────────────────
-            //services.AddStackExchangeRedisCache(options => {
-            //    options.Configuration = config.GetConnectionString("Redis");
-            //    options.InstanceName = "HelpAtHome:";
-            //});
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = config.GetConnectionString("Redis");
+                options.InstanceName  = "HelpAtHome:";
+            });
 
             // ─── Application Services ───────────────────────────────────────────
             services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -48,7 +49,7 @@ namespace HelpAtHome.Api.Extensions
             services.AddScoped<IWalletService, WalletService>();
             services.AddScoped<INotificationService, NotificationService>();
             //services.AddScoped<IReviewService, ReviewService>();
-            //services.AddScoped<ICaregiverService, CaregiverService>();
+            services.AddScoped<ICaregiverService, CaregiverProfileService>();
             //services.AddScoped<IAgencyService, AgencyService>();
             //services.AddScoped<ISupportService, SupportService>();
             //services.AddScoped<IEmergencyService, EmergencyService>();

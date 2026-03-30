@@ -1,6 +1,8 @@
-﻿using HelpAtHome.Core.DTOs.Requests;
+using HelpAtHome.Application.Interfaces.Services;
+using HelpAtHome.Core.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HelpAtHome.Api.Controllers
 {
@@ -9,101 +11,71 @@ namespace HelpAtHome.Api.Controllers
     [Authorize]
     public class CaregiversController : ControllerBase
     {
+        private readonly ICaregiverService _caregiverService;
+
+        public CaregiversController(ICaregiverService caregiverService)
+        {
+            _caregiverService = caregiverService;
+        }
+
+        // GET /api/caregivers?state=Lagos&city=Ikeja&maxHourlyRate=5000&page=1&pageSize=10
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> Search([FromQuery] CaregiverSearchDto filter,
-            [FromQuery] int page = 1, [FromQuery] int size = 10)
-        { 
-            /* delegates to ICaregiverService.SearchAsync */ 
-            return Ok(new
-            {
-                Total = 1,
-                Page = page,
-                Size = size,
-                Caregivers = new[]
-                {
-                    new
-                    {
-                        Id = Guid.NewGuid(),
-                        FullName = "Jane Doe",
-                        Bio = "Experienced caregiver with 5 years of experience.",
-                        Skills = new[] { "Elderly Care", "Medication Management" },
-                        HourlyRate = 15.00m,
-                        IsAvailable = true,
-                        VerificationStatus = "Approved"
-                    }
-                }
-            });
+        public async Task<IActionResult> Search([FromQuery] CaregiverSearchDto filter)
+        {
+            var result = await _caregiverService.SearchAsync(filter);
+            return result.IsSuccess ? Ok(result.Data) : BadRequest(result.ErrorMessage);
         }
 
+        // GET /api/caregivers/{id}
         [HttpGet("{id}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetProfile(Guid id) 
+        public async Task<IActionResult> GetProfile(Guid id)
         {
-            return Ok(new
-            {
-                Id = id,
-                FullName = "Jane Doe",
-                Bio = "Experienced caregiver with 5 years of experience.",
-                Skills = new[] { "Elderly Care", "Medication Management" },
-                HourlyRate = 15.00m,
-                IsAvailable = true,
-                VerificationStatus = "Approved"
-            });
+            var result = await _caregiverService.GetProfileAsync(id);
+            if (!result.IsSuccess) return NotFound(result.ErrorMessage);
+            return Ok(result.Data);
         }
 
+        // PUT /api/caregivers/profile
         [HttpPut("profile")]
         [Authorize(Roles = "IndividualCaregiver,AgencyCaregiver")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateCaregiverProfileDto dto)
         {
-            // Validate and update caregiver profile via ICaregiverService.UpdateProfileAsync
-            return Ok(new { Message = "Profile updated successfully" });
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _caregiverService.UpdateProfileAsync(userId, dto);
+            return result.IsSuccess ? Ok(result.Data) : BadRequest(result.ErrorMessage);
         }
 
-        [HttpPost("documents")]
-        [Authorize(Roles = "IndividualCaregiver,AgencyCaregiver")]
-        public async Task<IActionResult> UploadDocument([FromForm] UploadDocumentDto dto) 
-        {
-            // Validate file, save to storage, and create document record via ICaregiverService.UploadDocumentAsync
-            return Ok(new { Message = "Document uploaded successfully" });
-        }
-
+        // GET /api/caregivers/pending-verification
         [HttpGet("pending-verification")]
         [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> PendingVerification([FromQuery] int page = 1, [FromQuery] int size = 20) 
+        public async Task<IActionResult> PendingVerification([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
-            return Ok(new
-            {
-                Total = 1,
-                Page = page,
-                Size = size,
-                Caregivers = new[]
-                {
-                    new
-                    {
-                        Id = Guid.NewGuid(),
-                        FullName = "John Smith",
-                        SubmittedAt = DateTime.UtcNow.AddDays(-2),
-                        Documents = new[] { "ID Card", "Background Check" }
-                    }
-                }
-            });
+            var result = await _caregiverService.GetPendingVerificationAsync(page, pageSize);
+            return Ok(result.Data);
         }
 
+        // POST /api/caregivers/{id}/verify
         [HttpPost("{id}/verify")]
         [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> Verify(Guid id, [FromBody] VerifyCaregiverDto dto) 
+        public async Task<IActionResult> Verify(Guid id, [FromBody] VerifyCaregiverDto dto)
         {
-            // Update caregiver verification status via ICaregiverService.VerifyCaregiverAsync
-            return Ok(new { Message = $"Caregiver {(dto.IsApproved ? "approved" : "rejected")} successfully" });
+            var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result  = await _caregiverService.VerifyCaregiverAsync(adminId, id, dto);
+            return result.IsSuccess ? Ok(new { Message = $"Caregiver {(dto.IsApproved ? "approved" : "rejected")}." }) : BadRequest(result.ErrorMessage);
         }
 
+        // POST /api/caregivers/{id}/availability
         [HttpPost("{id}/availability")]
         [Authorize(Roles = "IndividualCaregiver,AgencyCaregiver")]
-        public async Task<IActionResult> ToggleAvailability(Guid id) 
+        public async Task<IActionResult> ToggleAvailability(Guid id)
         {
-            // Toggle caregiver availability via ICaregiverService.ToggleAvailabilityAsync
-            return Ok(new { Message = "Availability status updated successfully" });
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _caregiverService.ToggleAvailabilityAsync(userId);
+            return result.IsSuccess
+                ? Ok(new { IsAvailable = result.Data, Message = result.Data ? "You are now available." : "You are now unavailable." })
+                : BadRequest(result.ErrorMessage);
         }
     }
 }
