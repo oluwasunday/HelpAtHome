@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(find C:PersonalGitHelpAtHome -iname *test* -o -iname *xunit* -o -iname *nunit*)",
+      "Bash(dotnet test:*)"
+    ]
+  }
+}
