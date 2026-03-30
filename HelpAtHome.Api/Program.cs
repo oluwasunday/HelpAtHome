@@ -112,7 +112,7 @@ try
     // ── MVC, Swagger, AutoMapper, Validation, CORS ──────────────────────────
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerConfiguration();
     builder.Services.AddAutoMapper(typeof(MappingProfile));
     builder.Services.AddFluentValidationAutoValidation();
     builder.Services.AddValidatorsFromAssemblyContaining<RegisterClientDtoValidator>();
@@ -135,8 +135,7 @@ try
 
     if (app.Environment.IsDevelopment())
     {
-        app.UseSwagger();
-        app.UseSwaggerUI();
+        app.UseSwaggerConfiguration();
     }
 
     app.UseSerilogRequestLogging(opts =>

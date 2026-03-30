@@ -10,9 +10,11 @@ using System.Text.Json;
 
 namespace HelpAtHome.Api.Controllers
 {
+    /// <summary>Wallet — balances, deposits via Paystack, withdrawals, and the Paystack webhook.</summary>
     [ApiController]
     [Route("api/wallet")]
     [Authorize]
+    [Produces("application/json")]
     public class WalletController : ControllerBase
     {
         private readonly IWalletService _walletService;
@@ -24,8 +26,10 @@ namespace HelpAtHome.Api.Controllers
             _config        = config;
         }
 
-        // GET /api/wallet
+        /// <summary>Get the authenticated user's wallet balance and details.</summary>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetWallet()
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -33,8 +37,10 @@ namespace HelpAtHome.Api.Controllers
             return result.IsSuccess ? Ok(result.Data) : NotFound(result.ErrorMessage);
         }
 
-        // GET /api/wallet/transactions?page=1&size=20
+        /// <summary>Get a paginated transaction history for the authenticated user's wallet.</summary>
         [HttpGet("transactions")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetTransactions([FromQuery] int page = 1, [FromQuery] int size = 20)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -42,8 +48,11 @@ namespace HelpAtHome.Api.Controllers
             return result.IsSuccess ? Ok(result.Data) : BadRequest(result.ErrorMessage);
         }
 
-        // POST /api/wallet/deposit
+        /// <summary>Initiate a wallet top-up via Paystack. Returns a payment authorization URL.</summary>
+        /// <remarks>Redirect the user to the returned URL to complete payment. On success, Paystack calls the webhook.</remarks>
         [HttpPost("deposit")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> InitiateDeposit([FromBody] InitiateDepositDto dto)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -51,28 +60,41 @@ namespace HelpAtHome.Api.Controllers
             return result.IsSuccess ? Ok(result.Data) : BadRequest(result.ErrorMessage);
         }
 
-        // POST /api/wallet/deposit/verify?reference=xxx
+        /// <summary>Manually verify a deposit by its Paystack reference. Called after the user returns from the payment page.</summary>
         [HttpPost("deposit/verify")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> VerifyDeposit([FromQuery] string reference)
         {
             var result = await _walletService.VerifyDepositAsync(reference);
             return result.IsSuccess ? Ok(new { Message = "Deposit verified successfully." }) : BadRequest(result.ErrorMessage);
         }
 
-        // POST /api/wallet/withdraw
+        /// <summary>Initiate a withdrawal from the authenticated user's wallet to their bank account.</summary>
         [HttpPost("withdraw")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Withdraw([FromBody] WithdrawalDto dto)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await _walletService.InitiateWithdrawalAsync(userId, dto);
-            return result.IsSuccess ? Ok(new { Message = "Withdrawal initiated. Funds will arrive within 1–2 business days." }) : BadRequest(result.ErrorMessage);
+            return result.IsSuccess
+                ? Ok(new { Message = "Withdrawal initiated. Funds will arrive within 1–2 business days." })
+                : BadRequest(result.ErrorMessage);
         }
 
-        // ── Paystack webhook ────────────────────────────────────────────────
-        // POST /api/wallet/webhook
-        // Paystack sends signed events here; we verify HMAC-SHA512 before processing.
+        /// <summary>
+        /// Paystack webhook receiver. Verifies the HMAC-SHA512 signature before processing events.
+        /// </summary>
+        /// <remarks>
+        /// This endpoint is called by Paystack, not by clients. Configure the URL in your Paystack dashboard.
+        /// Currently handles: `charge.success` (auto-credits the wallet on successful payment).
+        /// </remarks>
         [HttpPost("webhook")]
         [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Webhook()
         {
             // 1. Read raw body (needed for signature verification)
