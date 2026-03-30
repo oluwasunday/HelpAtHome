@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using HelpAtHome.Core.DTOs.Common;
+using Enums = HelpAtHome.Core.Enums;
 using HelpAtHome.Core.DTOs.Requests;
 using HelpAtHome.Core.DTOs.Responses;
 using HelpAtHome.Core.Entities;
@@ -25,8 +26,24 @@ namespace HelpAtHome.Application
                 .ForMember(d => d.GenderProvided, o => o.MapFrom(s => s.GenderProvided.ToString()))
                 .ForMember(d => d.VerificationStatus, o => o.MapFrom(s => s.VerificationStatus.ToString()))
                 .ForMember(d => d.Services, o => o.MapFrom(s =>
-                    s.CaregiverServices.Select(cs => cs.ServiceCategory.Name).ToList()))
-                .ForMember(d => d.AgencyName, o => o.MapFrom(s => s.Agency != null ? s.Agency.AgencyName : null));
+                    Enum.GetValues<Enums.Services>()
+                        .Where(f => f != Enums.Services.None && s.Services.HasFlag(f))
+                        .Select(f => f.ToString())
+                        .ToList()))
+                .ForMember(d => d.AgencyName, o => o.MapFrom(s => s.Agency != null ? s.Agency.AgencyName : null))
+                .ForMember(d => d.Address, o => o.MapFrom(s => s.Address));
+
+            CreateMap<CaregiverSummaryDto, CaregiverProfile>()
+                .ForMember(d => d.Services, o => o.MapFrom((src, dst) =>
+                    src.Services
+                        .Where(name => Enum.IsDefined(typeof(Enums.Services), name))
+                        .Select(name => Enum.Parse<Enums.Services>(name))
+                        .Aggregate(Enums.Services.None, (acc, f) => acc | f)))
+                .ForMember(d => d.Badge, o => o.Ignore())
+                .ForMember(d => d.GenderProvided, o => o.Ignore())
+                .ForMember(d => d.VerificationStatus, o => o.Ignore())
+                .ForMember(d => d.Agency, o => o.Ignore())
+                .ForMember(d => d.Address, o => o.Ignore());
 
             CreateMap<CaregiverProfile, CaregiverProfileDto>();
 
@@ -109,10 +126,6 @@ namespace HelpAtHome.Application
                            o => o.MapFrom(s => s.Address));
 
             // ── Update CaregiverProfile mapping ──────────────────────────────────
-            CreateMap<CaregiverProfile, CaregiverSummaryDto>()
-                .ForMember(d => d.Address,
-                           o => o.MapFrom(s => s.Address));
-
             CreateMap<CaregiverProfile, CaregiverProfileDto>()
                 .IncludeBase<CaregiverProfile, CaregiverSummaryDto>();
 

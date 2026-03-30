@@ -37,20 +37,20 @@ namespace HelpAtHome.Application.Services
         // ── Search ───────────────────────────────────────────────────────────
         public async Task<Result<PagedResult<CaregiverSummaryDto>>> SearchAsync(CaregiverSearchDto filter)
         {
-            var cacheKey = $"caregiver:search:{JsonSerializer.Serialize(filter)}";
+            //var cacheKey = $"caregiver:search:{JsonSerializer.Serialize(filter)}";
 
-            var cached = await _cache.GetStringAsync(cacheKey);
-            if (cached != null)
-            {
-                var cachedResult = JsonSerializer.Deserialize<PagedResult<CaregiverSummaryDto>>(cached);
-                return Result<PagedResult<CaregiverSummaryDto>>.Ok(cachedResult!);
-            }
+            //var cached = await _cache.GetStringAsync(cacheKey);
+            //if (cached != null)
+            //{
+            //    var cachedResult = JsonSerializer.Deserialize<PagedResult<CaregiverSummaryDto>>(cached);
+            //    return Result<PagedResult<CaregiverSummaryDto>>.Ok(cachedResult!);
+            //}
 
             var (items, total) = await _uow.CaregiverProfiles.SearchAsync(filter);
             var dtos    = _mapper.Map<List<CaregiverSummaryDto>>(items);
             var paged   = new PagedResult<CaregiverSummaryDto>(dtos, total, filter.Page, filter.PageSize);
 
-            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(paged), SearchCacheOptions);
+            //await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(paged), SearchCacheOptions);
 
             return Result<PagedResult<CaregiverSummaryDto>>.Ok(paged);
         }
