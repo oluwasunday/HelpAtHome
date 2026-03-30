@@ -30,14 +30,14 @@ namespace HelpAtHome.Core.DTOs.Requests.Auth
         public decimal MonthlyRate { get; set; }
         public Gender Gender { get; set; }
         public Services ServicesToOffer { get; set; }
-        public List<string> LanguagesSpoken { get; set; }
+        public List<string> LanguagesSpoken { get; set; } = new();
         public List<Guid> ServiceCategoryIds { get; set; } = new();
 
         // verification and safety
         public DocumentType IdType { get; set; }
-        public string IdNumber { get; set; }
-        public string NextOfKinName { get; set; }
-        public string NextOfKinPhoneNumber { get; set; }
+        public string? IdNumber { get; set; }
+        public string? NextOfKinName { get; set; }
+        public string? NextOfKinPhoneNumber { get; set; }
 
         [Required]
         public AddressUpsertDto Address { get; set; } = new();

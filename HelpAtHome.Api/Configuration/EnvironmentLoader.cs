@@ -12,9 +12,9 @@ namespace HelpAtHome.Api.Configuration
     /// </summary>
     public static class EnvironmentLoader
     {
-        public static void Load(string? path = null)
+        public static void Load(ConfigurationManager config, string? path = null)
         {
-            path ??= Path.Combine(Directory.GetCurrentDirectory(), ".env");
+            path ??= Path.Combine(Directory.GetCurrentDirectory(), "mySample.env");
 
             if (!File.Exists(path)) return;
 
@@ -41,7 +41,10 @@ namespace HelpAtHome.Api.Configuration
 
                 // Never overwrite a variable already set by the OS or shell —
                 // this guarantees production env vars always take precedence.
-                if (Environment.GetEnvironmentVariable(key) is null)
+                var envValue = Environment.GetEnvironmentVariable(key);
+
+                config.AddEnvironmentVariables();
+                if (envValue is null)
                     Environment.SetEnvironmentVariable(key, value);
             }
         }

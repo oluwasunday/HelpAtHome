@@ -42,6 +42,7 @@ namespace HelpAtHome.Api.Configuration
         /// </summary>
         public static void Validate(IConfiguration config)
         {
+            var keys = RequiredKeys.Select(e => e.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var missing = RequiredKeys
                 .Where(entry => string.IsNullOrWhiteSpace(config[entry.Key]))
                 .ToList();
