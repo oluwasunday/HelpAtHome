@@ -65,6 +65,9 @@ namespace HelpAtHome.Tests.Fakes
             var items = all.Skip((page - 1) * size).Take(size);
             return Task.FromResult<(IEnumerable<Booking>, int)>((items, total));
         }
+
+        public Task<(decimal AllTime, decimal ThisMonth, decimal ThisWeek)> GetRevenueStatsAsync()
+            => Task.FromResult<(decimal, decimal, decimal)>((0m, 0m, 0m));
     }
 
     public class FakeWalletRepository : FakeGenericRepository<Wallet>, IWalletRepository
@@ -139,7 +142,11 @@ namespace HelpAtHome.Tests.Fakes
     public class FakeReviewRepository : FakeGenericRepository<Review>, IReviewRepository { }
     public class FakeEmergencyAlertRepository : FakeGenericRepository<EmergencyAlert>, IEmergencyAlertRepository { }
     public class FakeFamilyAccessRepository : FakeGenericRepository<FamilyAccess>, IFamilyAccessRepository { }
-    public class FakeVerificationDocumentRepository : FakeGenericRepository<VerificationDocument>, IVerificationDocumentRepository { }
+    public class FakeVerificationDocumentRepository : FakeGenericRepository<VerificationDocument>, IVerificationDocumentRepository
+    {
+        public Task<(IEnumerable<VerificationDocument> Items, int Total)> GetPendingPagedAsync(int page, int size)
+            => Task.FromResult<(IEnumerable<VerificationDocument>, int)>((new List<VerificationDocument>(), 0));
+    }
     public class FakeServiceCategoryRepository : FakeGenericRepository<ServiceCategory>, IServiceCategoryRepository { }
 
     public class FakeClientAddressRepository : FakeGenericRepository<ClientAddress>, IClientAddressRepository

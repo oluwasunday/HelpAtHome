@@ -12,6 +12,7 @@ namespace HelpAtHome.Application.Interfaces.Repositories
         Task<bool> HasActiveBookingAsync(Guid caregiverProfileId, DateTime startDate, DateTime endDate);
         Task<Booking?> GetWithDetailsAsync(Guid id);
         Task<(IEnumerable<Booking> Items, int Total)> GetAgencyBookingsAsync(Guid agencyId, int page, int size);
+        Task<(decimal AllTime, decimal ThisMonth, decimal ThisWeek)> GetRevenueStatsAsync();
     }
 
 

@@ -92,5 +92,26 @@ namespace HelpAtHome.Infrastructure.Repositories
 
             return (items, total);
         }
+
+        public async Task<(decimal AllTime, decimal ThisMonth, decimal ThisWeek)> GetRevenueStatsAsync()
+        {
+            var now = DateTime.UtcNow;
+            var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var weekStart = now.AddDays(-7);
+
+            var allTime = await _ctx.Bookings
+                .Where(b => b.Status == BookingStatus.Completed)
+                .SumAsync(b => b.PlatformFee);
+
+            var thisMonth = await _ctx.Bookings
+                .Where(b => b.Status == BookingStatus.Completed && b.CompletedAt >= monthStart)
+                .SumAsync(b => b.PlatformFee);
+
+            var thisWeek = await _ctx.Bookings
+                .Where(b => b.Status == BookingStatus.Completed && b.CompletedAt >= weekStart)
+                .SumAsync(b => b.PlatformFee);
+
+            return (allTime, thisMonth, thisWeek);
+        }
     }
 }

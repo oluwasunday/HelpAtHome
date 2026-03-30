@@ -60,6 +60,7 @@ namespace HelpAtHome.Api.Extensions
             //services.AddScoped<IReviewService, ReviewService>();
             services.AddScoped<ICaregiverService, CaregiverProfileService>();
             services.AddScoped<IAgencyService, AgencyService>();
+            services.AddScoped<IAdminService, AdminService>();
             //services.AddScoped<ISupportService, SupportService>();
             //services.AddScoped<IEmergencyService, EmergencyService>();
             //services.AddScoped<IFamilyAccessService, FamilyAccessService>();

@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(find /c/PersonalGit/HelpAtHome -type f -name *.cs)",
+      "Bash(xargs grep:*)",
+      "Bash(dotnet test:*)"
     ]
   }
 }
