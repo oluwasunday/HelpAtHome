@@ -13,7 +13,7 @@
 
         // ── FK ───────────────────────────────────────────────────────────
         // AgencyId is null for individual caregivers
-        public Guid? AgencyId { get; set; } = Guid.Empty;
+        public Guid? AgencyId { get; set; }    // null for individual caregivers
         public Agency? Agency { get; set; }
         public Guid CaregiverProfileId { get; set; }
         public CaregiverProfile CaregiverProfile { get; set; } = null!;

@@ -15,6 +15,7 @@ namespace HelpAtHome.Core.Entities
         public bool IsAvailable { get; set; } = true;
         public decimal HourlyRate { get; set; }
         public decimal DailyRate { get; set; }
+        public decimal WeeklyRate { get; set; }
         public decimal MonthlyRate { get; set; }
         public Gender GenderProvided { get; set; }
         public Services Services { get; set; }

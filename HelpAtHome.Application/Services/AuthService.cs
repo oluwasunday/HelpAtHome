@@ -176,89 +176,58 @@ namespace HelpAtHome.Application.Services
 
         public async Task<Result<AuthResponseDto>> RegisterIndividualCaregiverAsync(RegisterCaregiverDto dto)
         {
-            if (await _userManager.FindByEmailAsync(dto.Email) != null)
+            // Run both uniqueness checks in parallel
+            var emailTask = _userManager.FindByEmailAsync(dto.Email);
+            var phoneTask = _uow.Users.GetByPhoneAsync(dto.PhoneNumber);
+            await Task.WhenAll(emailTask, phoneTask);
+
+            if (emailTask.Result != null)
                 return Result<AuthResponseDto>.Fail("Email is already registered.");
-            if ((await _uow.Users.GetByPhoneAsync(dto.PhoneNumber)) != null)
+            if (phoneTask.Result != null)
                 return Result<AuthResponseDto>.Fail("Phone number is already registered.");
-            if (dto.Address == null)
+
+            var user = BuildCaregiverUser(dto);
+
+            await _uow.BeginTransactionAsync();
+            try
             {
-                return Result<AuthResponseDto>.Fail("Address info is required.");
+                var identityResult = await _userManager.CreateAsync(user, dto.Password);
+                if (!identityResult.Succeeded)
+                {
+                    await _uow.RollbackAsync();
+                    return Result<AuthResponseDto>.Fail(
+                        string.Join(", ", identityResult.Errors.Select(e => e.Description)));
+                }
+
+                await _userManager.AddToRoleAsync(user, nameof(UserRole.IndividualCaregiver));
+
+                var profile = BuildCaregiverProfile(dto, user);
+                await _uow.CaregiverProfiles.AddAsync(profile);
+                await _uow.Wallets.AddAsync(new Wallet { Id = Guid.NewGuid(), UserId = user.Id });
+
+                if (dto.ServiceCategoryIds?.Count > 0)
+                {
+                    foreach (var catId in dto.ServiceCategoryIds)
+                        await _uow.CaregiverServices.AddAsync(new CaregiverService
+                        {
+                            Id = Guid.NewGuid(),
+                            CaregiverProfileId = profile.Id,
+                            ServiceCategoryId = catId
+                        });
+                }
+
+                await _uow.SaveChangesAsync();
+                await _uow.CommitAsync();
             }
-
-            var user = new User
+            catch(Exception ex)
             {
-                Id = Guid.NewGuid(),
-                UserName = dto.Email,
-                Email = dto.Email,
-                FirstName = dto.FirstName,
-                LastName = dto.LastName,
-                PhoneNumber = dto.PhoneNumber,
-                Role = UserRole.IndividualCaregiver,
-                ProfilePhotoUrl = dto.ProfilePicture,
-                IsActive = true,
-                LockoutEnabled = true
-            };
-            var result = await _userManager.CreateAsync(user, dto.Password);
-            if (!result.Succeeded)
-                return Result<AuthResponseDto>.Fail(string.Join(", ", result.Errors.Select(e => e.Description)));
-
-            await _userManager.AddToRoleAsync(user, nameof(UserRole.IndividualCaregiver));
-
-            var profileId = Guid.NewGuid(); // Generate a new Guid for the CaregiverProfile
-            var profile = new CaregiverProfile
-            {
-                Id = profileId,
-                UserId = user.Id,
-                Bio = dto.Bio,
-                YearsOfExperience = dto.YearsOfExperience,
-                HourlyRate = dto.HourlyRate,
-                DailyRate = dto.DailyRate,
-                MonthlyRate = dto.MonthlyRate,
-                GenderProvided = dto.Gender,
-                VerificationStatus = VerificationStatus.Pending,
-                Badge = BadgeLevel.New,
-                AgencyId = null, // individual — no agency
-                Agency = null,
-                Services = dto.ServicesToOffer,
-                LanguagesSpoken = JsonSerializer.Serialize(dto.LanguagesSpoken),
-                User = user,
-                //WorkingHours = dto.WorkingHours,
-                Address = new CaregiverAddress
-                {
-                    Id = Guid.NewGuid(),
-                    CaregiverProfileId = profileId,
-                    AgencyId = Guid.Empty,  // individual — no agency
-                    Line1 = dto.Address.Line1,
-                    Line2 = dto.Address.Line2,
-                    Locality = dto.Address.Locality,
-                    City = dto.Address.City,
-                    LGA = dto.Address.LGA,
-                    State = dto.Address.State,
-                    Country = dto.Address.Country,
-                    PostalCode = dto.Address.PostalCode
-                }
-
-            };
-            await _uow.CaregiverProfiles.AddAsync(profile);
-            await _uow.Wallets.AddAsync(new Wallet { UserId = user.Id });
-            await _uow.SaveChangesAsync();
-
-            if (dto.ServiceCategoryIds?.Any() == true)
-                foreach (var catId in dto.ServiceCategoryIds)
-                {
-                    await _uow.CaregiverServices.AddAsync(new CaregiverService { 
-                        Id = Guid.NewGuid(), 
-                        CaregiverProfileId = profile.Id, 
-                        ServiceCategoryId = catId, 
-                        CaregiverProfile = profile 
-                    });
-                }
-            await _uow.SaveChangesAsync();
+                await _uow.RollbackAsync();
+                return Result<AuthResponseDto>.Fail($"Registration failed. Please try again. {ex.Message}");
+            }
 
             await SendEmailOtpAsync(user.Id);
             //await _audit.LogAsync(user.Id.ToString(), user.Role.ToString(), AuditAction.Create, "User", user.Id.ToString());
             return Result<AuthResponseDto>.Ok(await BuildAuthResponseAsync(user));
-
         }
 
         public async Task<Result<AuthResponseDto>> RegisterAgencyAdminAsync(RegisterAgencyAdminDto dto)
@@ -535,6 +504,7 @@ namespace HelpAtHome.Application.Services
             if (user != null)
             {
                 user.EmailConfirmed = true;
+                user.IsActive = true;   // activate account now that email is confirmed
                 await _userManager.UpdateAsync(user);
             }
 
@@ -629,6 +599,65 @@ namespace HelpAtHome.Application.Services
         }
 
         // ── Private helpers ───────────────────────────────────────────────
+
+        private static User BuildCaregiverUser(RegisterCaregiverDto dto) => new User
+        {
+            Id = Guid.NewGuid(),
+            UserName = dto.Email,
+            Email = dto.Email,
+            FirstName = dto.FirstName.Trim(),
+            LastName = dto.LastName.Trim(),
+            PhoneNumber = dto.PhoneNumber,
+            Role = UserRole.IndividualCaregiver,
+            ProfilePhotoUrl = dto.ProfilePicture,
+            IsActive = false,       // activated after email OTP is verified
+            LockoutEnabled = true
+        };
+
+        private static CaregiverProfile BuildCaregiverProfile(RegisterCaregiverDto dto, User user)
+        {
+            var profileId = Guid.NewGuid();
+            return new CaregiverProfile
+            {
+                Id = profileId,
+                UserId = user.Id,
+                Bio = dto.Bio,
+                YearsOfExperience = dto.YearsOfExperience,
+                HourlyRate = dto.HourlyRate,
+                DailyRate = dto.DailyRate,
+                WeeklyRate = dto.WeeklyRate,
+                MonthlyRate = dto.MonthlyRate,
+                GenderProvided = dto.Gender,
+                VerificationStatus = VerificationStatus.Pending,
+                Badge = BadgeLevel.New,
+                Services = dto.ServicesToOffer,
+                LanguagesSpoken = dto.LanguagesSpoken?.Count > 0
+                    ? JsonSerializer.Serialize(dto.LanguagesSpoken)
+                    : "[]",
+                IdType = dto.IdType,
+                IdNumber = dto.IdNumber,
+                NextOfKinName = dto.NextOfKinName,
+                NextOfKinPhoneNumber = dto.NextOfKinPhoneNumber,
+                Address = BuildCaregiverAddress(dto, profileId)
+            };
+        }
+
+        private static CaregiverAddress BuildCaregiverAddress(RegisterCaregiverDto dto, Guid profileId) =>
+            new CaregiverAddress
+            {
+                Id = Guid.NewGuid(),
+                CaregiverProfileId = profileId,
+                AgencyId = null,    // individual — no agency
+                Line1 = dto.Address.Line1,
+                Line2 = dto.Address.Line2,
+                Locality = dto.Address.Locality,
+                City = dto.Address.City,
+                LGA = dto.Address.LGA,
+                State = dto.Address.State,
+                Country = dto.Address.Country,
+                PostalCode = dto.Address.PostalCode
+            };
+
         private async Task<AuthResponseDto> BuildAuthResponseAsync(User user)
         {
             var roles = await _userManager.GetRolesAsync(user);
