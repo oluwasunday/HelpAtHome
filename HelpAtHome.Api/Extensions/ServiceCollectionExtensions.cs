@@ -47,6 +47,15 @@ namespace HelpAtHome.Api.Extensions
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IBookingService, BookingService>();
             services.AddScoped<IWalletService, WalletService>();
+            services.AddScoped<IPaymentGatewayService, PaystackService>();
+
+            // ─── Paystack HTTP client ────────────────────────────────────────────
+            services.AddHttpClient("Paystack", client =>
+            {
+                var baseUrl = (config["Paystack:BaseUrl"] ?? "https://api.paystack.co").TrimEnd('/') + "/";
+                client.BaseAddress = new Uri(baseUrl);
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config["Paystack:SecretKey"]}");
+            });
             services.AddScoped<INotificationService, NotificationService>();
             //services.AddScoped<IReviewService, ReviewService>();
             services.AddScoped<ICaregiverService, CaregiverProfileService>();
