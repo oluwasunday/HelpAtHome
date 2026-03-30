@@ -9,7 +9,7 @@ namespace HelpAtHome.Application.Interfaces.Services
         Task<Result<AuthResponseDto>> RegisterClientAsync(RegisterClientDto dto);
         Task<Result<AuthResponseDto>> RegisterIndividualCaregiverAsync(RegisterCaregiverDto dto);
         Task<Result<AuthResponseDto>> RegisterAgencyAdminAsync(RegisterAgencyAdminDto dto);
-        Task<Result<AuthResponseDto>> RegisterAgencyCaregiverAsync(RegisterAgencyCaregiverDto dto, Guid agencyId);
+        Task<Result<Guid>> RegisterAgencyCaregiverAsync(RegisterAgencyCaregiverDto dto, Guid agencyId);
         Task<Result<AuthResponseDto>> LoginAsync(LoginDto dto, string ipAddress);
         Task<Result<AuthResponseDto>> RefreshTokenAsync(string refreshToken, string ipAddress);
         Task<Result> LogoutAsync(Guid userId, string refreshToken);

@@ -300,18 +300,26 @@ namespace HelpAtHome.Application.Services
 
         // Called by AgencyService.AddCaregiverAsync — not directly by a controller.
         // Exposed on IAuthService so AgencyService can reuse the token flow.
-        public async Task<Result<AuthResponseDto>> RegisterAgencyCaregiverAsync(RegisterAgencyCaregiverDto dto, Guid agencyId)
+        public async Task<Result<Guid>> RegisterAgencyCaregiverAsync(RegisterAgencyCaregiverDto dto, Guid agencyId)
         {
             if (await _userManager.FindByEmailAsync(dto.Email) != null)
-                return Result<AuthResponseDto>.Fail("Email already registered");
+                return Result<Guid>.Fail("Email already registered");
             if (await _uow.Users.PhoneExistsAsync(dto.PhoneNumber))
-                return Result<AuthResponseDto>.Fail("Phone number already registered");
+                return Result<Guid>.Fail("Phone number already registered");
 
             var agency = await _uow.Agencies.GetByIdAsync(agencyId);
             if (agency == null)
-                return Result<AuthResponseDto>.Fail("Agency not found");
+                return Result<Guid>.Fail("Agency not found");
             if (agency.VerificationStatus != VerificationStatus.Approved)
-                return Result<AuthResponseDto>.Fail("Agency not yet verified");
+                return Result<Guid>.Fail("Agency not yet verified");
+
+            if (dto.ServiceCategoryIds.Count > 0)
+            {
+                var validCount = await _uow.ServiceCategories.CountAsync(
+                    sc => dto.ServiceCategoryIds.Contains(sc.Id));
+                if (validCount != dto.ServiceCategoryIds.Count)
+                    return Result<Guid>.Fail("One or more service categories are invalid");
+            }
 
             var user = new User
             {
@@ -325,54 +333,66 @@ namespace HelpAtHome.Application.Services
                 IsActive = true,
                 LockoutEnabled = true
             };
-            var result = await _userManager.CreateAsync(user, dto.Password);
-            if (!result.Succeeded)
-                return Result<AuthResponseDto>.Fail(
-                    string.Join("; ", result.Errors.Select(e => e.Description)));
 
-            await _userManager.AddToRoleAsync(user, nameof(UserRole.AgencyCaregiver));
-
-            var caregiverProfileId = Guid.NewGuid(); // Generate a new Guid for the CaregiverProfile
-            var profile = new CaregiverProfile
+            await _uow.BeginTransactionAsync();
+            try
             {
-                Id = caregiverProfileId,
-                UserId = user.Id,
-                AgencyId = agencyId,
-                Bio = dto.Bio,
-                YearsOfExperience = dto.YearsOfExperience,
-                HourlyRate = dto.HourlyRate,
-                DailyRate = dto.DailyRate,
-                MonthlyRate = dto.MonthlyRate,
-                GenderProvided = dto.Gender,
-                VerificationStatus = VerificationStatus.Pending,
-                IsAvailable = true,
-                Address = new CaregiverAddress
+                var result = await _userManager.CreateAsync(user, dto.Password);
+                if (!result.Succeeded)
                 {
-                    Id = Guid.NewGuid(),
-                    CaregiverProfileId = caregiverProfileId,
-                    Line1 = dto.Address.Line1,
-                    Line2 = dto.Address.Line2,
-                    Locality = dto.Address.Locality,
-                    City = dto.Address.City,
-                    LGA = dto.Address.LGA,
-                    State = dto.Address.State,
-                    Country = dto.Address.Country,
-                    PostalCode = dto.Address.PostalCode
+                    await _uow.RollbackAsync();
+                    return Result<Guid>.Fail(string.Join("; ", result.Errors.Select(e => e.Description)));
                 }
-            };
-            await _uow.CaregiverProfiles.AddAsync(profile);
-            await _uow.Wallets.AddAsync(new Wallet { UserId = user.Id });
 
-            foreach (var catId in dto.ServiceCategoryIds)
-                await _uow.CaregiverServices.AddAsync(new CaregiverService
-                { CaregiverProfileId = profile.Id, ServiceCategoryId = catId });
+                await _userManager.AddToRoleAsync(user, nameof(UserRole.AgencyCaregiver));
 
-            await _uow.SaveChangesAsync();
-            //await _uow.Agencies.IncrementCaregiversCountAsync(agencyId);
+                var caregiverProfileId = Guid.NewGuid();
+                var profile = new CaregiverProfile
+                {
+                    Id = caregiverProfileId,
+                    UserId = user.Id,
+                    AgencyId = agencyId,
+                    Bio = dto.Bio,
+                    YearsOfExperience = dto.YearsOfExperience,
+                    HourlyRate = dto.HourlyRate,
+                    DailyRate = dto.DailyRate,
+                    MonthlyRate = dto.MonthlyRate,
+                    GenderProvided = dto.Gender,
+                    VerificationStatus = VerificationStatus.Pending,
+                    IsAvailable = true,
+                    Address = new CaregiverAddress
+                    {
+                        Id = Guid.NewGuid(),
+                        CaregiverProfileId = caregiverProfileId,
+                        Line1 = dto.Address.Line1,
+                        Line2 = dto.Address.Line2,
+                        Locality = dto.Address.Locality,
+                        City = dto.Address.City,
+                        LGA = dto.Address.LGA,
+                        State = dto.Address.State,
+                        Country = dto.Address.Country,
+                        PostalCode = dto.Address.PostalCode
+                    }
+                };
+                await _uow.CaregiverProfiles.AddAsync(profile);
+                await _uow.Wallets.AddAsync(new Wallet { UserId = user.Id });
+
+                foreach (var catId in dto.ServiceCategoryIds)
+                    await _uow.CaregiverServices.AddAsync(new CaregiverService
+                    { CaregiverProfileId = profile.Id, ServiceCategoryId = catId });
+
+                await _uow.SaveChangesAsync();
+                await _uow.CommitAsync();
+            }
+            catch
+            {
+                await _uow.RollbackAsync();
+                throw;
+            }
 
             await _notification.SendAsync(user.Id, "Welcome to Help At Home", $"You have been added to {agency.AgencyName}.", "system", null);
 
-            return Result<AuthResponseDto>.Ok(await BuildAuthResponseAsync(user));
+            return Result<Guid>.Ok(user.Id);
         }
 
         public async Task<Result<AuthResponseDto>> RefreshTokenAsync(string refreshToken, string ipAddress)

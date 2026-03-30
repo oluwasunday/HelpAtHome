@@ -20,8 +20,11 @@ namespace HelpAtHome.Core.DTOs.Requests.Auth
         public string Password { get; set; } = string.Empty;
         public string? Bio { get; set; }
         public int YearsOfExperience { get; set; }
+        [Range(0.01, double.MaxValue, ErrorMessage = "HourlyRate must be greater than zero")]
         public decimal HourlyRate { get; set; }
+        [Range(0.01, double.MaxValue, ErrorMessage = "DailyRate must be greater than zero")]
         public decimal DailyRate { get; set; }
+        [Range(0.01, double.MaxValue, ErrorMessage = "MonthlyRate must be greater than zero")]
         public decimal MonthlyRate { get; set; }
         public Gender Gender { get; set; }
         public List<Guid> ServiceCategoryIds { get; set; } = new();

@@ -73,5 +73,24 @@ namespace HelpAtHome.Infrastructure.Repositories
                  b.Status == BookingStatus.InProgress) &&
                 b.ScheduledStartDate < endDate &&
                 b.ScheduledEndDate > startDate);
+
+        public async Task<(IEnumerable<Booking> Items, int Total)> GetAgencyBookingsAsync(
+            Guid agencyId, int page, int size)
+        {
+            var query = _ctx.Bookings
+                .Where(b => b.CaregiverProfile!.AgencyId == agencyId)
+                .Include(b => b.ServiceCategory)
+                .Include(b => b.CaregiverProfile).ThenInclude(c => c!.User)
+                .Include(b => b.ClientProfile).ThenInclude(c => c!.User);
+
+            var total = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(b => b.CreatedAt)
+                .Skip((page - 1) * size)
+                .Take(size)
+                .ToListAsync();
+
+            return (items, total);
+        }
     }
 }

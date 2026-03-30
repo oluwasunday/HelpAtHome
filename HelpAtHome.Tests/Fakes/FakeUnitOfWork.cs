@@ -57,6 +57,14 @@ namespace HelpAtHome.Tests.Fakes
 
         public Task<Booking?> GetWithDetailsAsync(Guid id)
             => Task.FromResult(Data.FirstOrDefault(b => b.Id == id && !b.IsDeleted));
+
+        public Task<(IEnumerable<Booking> Items, int Total)> GetAgencyBookingsAsync(Guid agencyId, int page, int size)
+        {
+            var all = Data.Where(b => !b.IsDeleted).ToList();
+            var total = all.Count;
+            var items = all.Skip((page - 1) * size).Take(size);
+            return Task.FromResult<(IEnumerable<Booking>, int)>((items, total));
+        }
     }
 
     public class FakeWalletRepository : FakeGenericRepository<Wallet>, IWalletRepository
@@ -113,6 +121,13 @@ namespace HelpAtHome.Tests.Fakes
     {
         public Task<bool> RegistrationNumberExistsAsync(string registrationNumber)
             => Task.FromResult(Data.Any(a => a.RegistrationNumber == registrationNumber));
+
+        public Task<Agency?> GetWithDetailsAsync(Guid agencyId)
+            => Task.FromResult(Data.FirstOrDefault(a => a.Id == agencyId && !a.IsDeleted));
+
+        public Task<(IEnumerable<CaregiverProfile> Items, int Total)> GetCaregiversPagedAsync(
+            Guid agencyId, int page, int size)
+            => Task.FromResult<(IEnumerable<CaregiverProfile>, int)>((new List<CaregiverProfile>(), 0));
     }
 
     public class FakeTransactionRepository : FakeGenericRepository<Transaction>, ITransactionRepository { }

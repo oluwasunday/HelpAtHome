@@ -1,13 +1,11 @@
-﻿using HelpAtHome.Core.Entities;
+using HelpAtHome.Core.Entities;
 
 namespace HelpAtHome.Application.Interfaces.Repositories
 {
     public interface IAgencyRepository : IGenericRepository<Agency>
     {
-
-        public async Task<bool> RegistrationNumberExistsAsync(string registrationNumber)
-        {
-            return false;
-        }
+        Task<bool> RegistrationNumberExistsAsync(string registrationNumber);
+        Task<Agency?> GetWithDetailsAsync(Guid agencyId);
+        Task<(IEnumerable<CaregiverProfile> Items, int Total)> GetCaregiversPagedAsync(Guid agencyId, int page, int size);
     }
 }
