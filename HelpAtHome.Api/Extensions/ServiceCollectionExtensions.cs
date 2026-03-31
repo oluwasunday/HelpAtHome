@@ -12,6 +12,7 @@ using HelpAtHome.Core.Entities;
 using HelpAtHome.Infrastructure.Data;
 using HelpAtHome.Infrastructure.MongoDB;
 using HelpAtHome.Infrastructure.Repositories;
+using HelpAtHome.Infrastructure.Audit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -64,9 +65,9 @@ namespace HelpAtHome.Api.Extensions
             services.AddScoped<ISupportService, SupportService>();
             services.AddScoped<IEmergencyService, EmergencyService>();
             services.AddScoped<IFamilyAccessService, FamilyAccessService>();
-            //services.AddScoped<IBadgeService, BadgeService>();
+            services.AddScoped<IBadgeService, BadgeService>();
+            services.AddScoped<IAuditLogService, AuditLogService>();
             //services.AddScoped<IVerificationService, VerificationService>();
-            //services.AddScoped<IAuditLogService, AuditLogService>();
             services.AddScoped<IJwtService, JwtService>();
 
             services.AddScoped<IFirebasePush, FirebasePushSender>();

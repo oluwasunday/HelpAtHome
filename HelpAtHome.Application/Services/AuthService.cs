@@ -78,7 +78,9 @@ namespace HelpAtHome.Application.Services
                 RefreshToken = refreshToken,
                 UserId = user.Id,
                 Role = user.Role,
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
+                ExpiresAt = DateTime.UtcNow.AddHours(1),
+                FullName = user.FullName,
+                Email = user.Email
             });
         }
 

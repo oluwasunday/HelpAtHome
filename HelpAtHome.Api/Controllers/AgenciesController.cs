@@ -17,15 +17,18 @@ namespace HelpAtHome.Api.Controllers
         private readonly IAgencyService _agencyService;
         private readonly IAgencyRepository _agencyRepository;
         private readonly IAuthService _authService;
+        private readonly IAuditLogService _auditLog;
 
         public AgenciesController(
             IAgencyService agencyService,
             IAgencyRepository agencyRepository,
-            IAuthService authService)
+            IAuthService authService,
+            IAuditLogService auditLog)
         {
             _agencyService = agencyService;
             _agencyRepository = agencyRepository;
             _authService = authService;
+            _auditLog = auditLog;
         }
 
         /// <summary>Register a new agency for the authenticated agency admin.</summary>
@@ -151,7 +154,7 @@ namespace HelpAtHome.Api.Controllers
             return Ok(new { Message = dto.IsApproved ? "Agency approved" : "Agency rejected" });
         }
 
-        /// <summary>Retrieve the activity log for an agency. Not yet implemented.</summary>
+        /// <summary>Retrieve the activity log for an agency from MongoDB.</summary>
         [HttpGet("{id}/activity-logs")]
         [Authorize(Roles = "AgencyAdmin,Admin,SuperAdmin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -159,8 +162,8 @@ namespace HelpAtHome.Api.Controllers
         public async Task<IActionResult> GetActivityLogs(Guid id, int page = 1, int size = 20)
         {
             if (!await IsAdminOrOwnsAgency(id)) return Forbid();
-            // TODO: implement when AuditLogService is enabled (MongoDB collection)
-            return Ok(new { Message = "Activity log not yet implemented" });
+            var res = await _auditLog.GetAgencyActivityAsync(id, page, size);
+            return Ok(res.Data);
         }
 
         private async Task<bool> IsAdminOrOwnsAgency(Guid agencyId)

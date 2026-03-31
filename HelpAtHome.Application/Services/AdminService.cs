@@ -17,17 +17,20 @@ namespace HelpAtHome.Application.Services
         private readonly UserManager<User> _userManager;
         private readonly IMapper _mapper;
         private readonly INotificationService _notification;
+        private readonly IAuditLogService _audit;
 
         public AdminService(
             IUnitOfWork uow,
             UserManager<User> userManager,
             IMapper mapper,
-            INotificationService notification)
+            INotificationService notification,
+            IAuditLogService audit)
         {
             _uow = uow;
             _userManager = userManager;
             _mapper = mapper;
             _notification = notification;
+            _audit = audit;
         }
 
         public async Task<Result<AdminDashboardDto>> GetDashboardAsync()
@@ -137,6 +140,9 @@ namespace HelpAtHome.Application.Services
             await _notification.SendAsync(userId, "Account Suspended",
                 $"Your account has been suspended. Reason: {dto.Reason}", "system", null);
 
+            await _audit.LogAsync(adminId, "Admin", AuditAction.Suspend, "User", userId.ToString(),
+                $"Suspended. Reason: {dto.Reason}");
+
             return Result.Ok();
         }
 
@@ -160,6 +166,9 @@ namespace HelpAtHome.Application.Services
             await _notification.SendAsync(userId, "Account Restored",
                 "Your account suspension has been lifted. You can now log in.", "system", null);
 
+            await _audit.LogAsync(adminId, "Admin", AuditAction.Update, "User", userId.ToString(),
+                "Suspension lifted");
+
             return Result.Ok();
         }
 
@@ -179,6 +188,8 @@ namespace HelpAtHome.Application.Services
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
                 return Result.Fail(string.Join("; ", result.Errors.Select(e => e.Description)));
+
+            await _audit.LogAsync(adminId, "Admin", AuditAction.Delete, "User", userId.ToString());
 
             return Result.Ok();
         }
@@ -217,6 +228,10 @@ namespace HelpAtHome.Application.Services
                             : $"Your document was rejected. {dto.ReviewNote}",
                         "system", null);
             }
+
+            var auditAction = dto.IsApproved ? AuditAction.Approve : AuditAction.Reject;
+            await _audit.LogAsync(adminId, "Admin", auditAction, "VerificationDocument", documentId.ToString(),
+                dto.ReviewNote);
 
             return Result.Ok();
         }

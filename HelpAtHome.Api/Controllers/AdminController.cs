@@ -14,11 +14,19 @@ namespace HelpAtHome.Api.Controllers
     {
         private readonly IAdminService _adminService;
         private readonly IBookingService _bookingService;
+        private readonly IAuditLogService _auditLog;
+        private readonly IBadgeService _badge;
 
-        public AdminController(IAdminService adminService, IBookingService bookingService)
+        public AdminController(
+            IAdminService adminService,
+            IBookingService bookingService,
+            IAuditLogService auditLog,
+            IBadgeService badge)
         {
             _adminService = adminService;
             _bookingService = bookingService;
+            _auditLog = auditLog;
+            _badge = badge;
         }
 
         // ── Dashboard ─────────────────────────────────────────────────────────
@@ -148,6 +156,28 @@ namespace HelpAtHome.Api.Controllers
             var res = await _bookingService.AdminResolveDisputeAsync(adminId, id, dto.Resolution, dto.RefundClient);
             if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(new { Message = "Dispute resolved successfully" });
+        }
+
+        // ── Audit Logs ────────────────────────────────────────────────────────
+
+        /// <summary>Query the platform audit log with optional filters. Admin only.</summary>
+        [HttpGet("audit-logs")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAuditLogs([FromQuery] AuditLogFilterDto filter)
+        {
+            var res = await _auditLog.QueryAsync(filter);
+            return Ok(res.Data);
+        }
+
+        // ── Badges ───────────────────────────────────────────────────────────
+
+        /// <summary>Batch-recalculate badges for all caregivers. Admin only.</summary>
+        [HttpPost("badges/recalculate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> RecalculateAllBadges()
+        {
+            await _badge.RecalculateAllAsync();
+            return Ok(new { Message = "Badges recalculated for all caregivers." });
         }
     }
 }

@@ -15,6 +15,7 @@ namespace HelpAtHome.Core.DTOs.Responses
         public decimal HourlyRate { get; set; }
         public decimal DailyRate { get; set; }
         public decimal MonthlyRate { get; set; }
+        public decimal WeeklyRate { get; set; }
         public bool IsAvailable { get; set; }
         public string VerificationStatus { get; set; } = string.Empty;
         public string GenderProvided { get; set; } = string.Empty;

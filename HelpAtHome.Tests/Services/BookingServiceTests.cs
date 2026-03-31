@@ -52,7 +52,8 @@ namespace HelpAtHome.Tests.Services
                 .Build();
 
             var logger = new Mock<ILogger<BookingService>>();
-            var svc = new BookingService(uow, mapper.Object, notification.Object, config, logger.Object);
+            var badge = new Mock<IBadgeService>();
+            var svc = new BookingService(uow, mapper.Object, notification.Object, config, logger.Object, badge.Object);
             return (svc, uow, mapper);
         }
 

@@ -18,19 +18,22 @@ namespace HelpAtHome.Application.Services
         private readonly INotificationService _notification;
         private readonly IConfiguration _config;
         private readonly ILogger<BookingService> _logger;
+        private readonly IBadgeService _badge;
 
         public BookingService(
             IUnitOfWork uow,
             IMapper mapper,
             INotificationService notification,
             IConfiguration config,
-            ILogger<BookingService> logger)
+            ILogger<BookingService> logger,
+            IBadgeService badge)
         {
             _uow = uow;
             _mapper = mapper;
             _notification = notification;
             _config = config;
             _logger = logger;
+            _badge = badge;
         }
 
         // ── Create ────────────────────────────────────────────────────────────
@@ -241,6 +244,9 @@ namespace HelpAtHome.Application.Services
 
                 await _uow.SaveChangesAsync();
                 await _uow.CommitAsync();
+
+                // Recalculate badge based on updated completed count + rating
+                await _badge.RecalculateBadgeAsync(caregiverProfile.Id);
 
                 await _notification.SendAsync(
                     booking.ClientProfile.UserId,
