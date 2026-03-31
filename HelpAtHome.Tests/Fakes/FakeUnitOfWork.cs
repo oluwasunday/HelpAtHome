@@ -136,7 +136,25 @@ namespace HelpAtHome.Tests.Fakes
     public class FakeTransactionRepository : FakeGenericRepository<Transaction>, ITransactionRepository { }
     public class FakeRefreshTokenRepository : FakeGenericRepository<RefreshToken>, IRefreshTokenRepository { }
     public class FakeOtpCodeRepository : FakeGenericRepository<OtpCode>, IOtpCodeRepository { }
-    public class FakeSupportTicketRepository : FakeGenericRepository<SupportTicket>, ISupportTicketRepository { }
+    public class FakeSupportTicketRepository : FakeGenericRepository<SupportTicket>, ISupportTicketRepository
+    {
+        public Task<SupportTicket?> GetWithDetailsAsync(Guid ticketId)
+            => Task.FromResult(Data.FirstOrDefault(t => t.Id == ticketId));
+
+        public Task<(List<SupportTicket> Items, int Total)> GetPagedAsync(
+            Guid? userId, TicketStatus? status, TicketPriority? priority, int page, int size)
+        {
+            var q = Data.AsEnumerable();
+            if (userId.HasValue) q = q.Where(t => t.RaisedByUserId == userId.Value);
+            if (status.HasValue) q = q.Where(t => t.Status == status.Value);
+            if (priority.HasValue) q = q.Where(t => t.Priority == priority.Value);
+            var all = q.OrderByDescending(t => t.CreatedAt).ToList();
+            var paged = all.Skip((page - 1) * size).Take(size).ToList();
+            return Task.FromResult((paged, all.Count));
+        }
+    }
+
+    public class FakeTicketMessageRepository : FakeGenericRepository<TicketMessage>, ITicketMessageRepository { }
     public class FakeNotificationRepository : FakeGenericRepository<Notification>, INotificationRepository { }
     public class FakeCaregiverServiceRepository : FakeGenericRepository<CaregiverService>, ICaregiverServiceRepository { }
     public class FakeReviewRepository : FakeGenericRepository<Review>, IReviewRepository
@@ -167,8 +185,38 @@ namespace HelpAtHome.Tests.Fakes
             return Task.FromResult((avg, reviews.Count));
         }
     }
-    public class FakeEmergencyAlertRepository : FakeGenericRepository<EmergencyAlert>, IEmergencyAlertRepository { }
-    public class FakeFamilyAccessRepository : FakeGenericRepository<FamilyAccess>, IFamilyAccessRepository { }
+    public class FakeEmergencyAlertRepository : FakeGenericRepository<EmergencyAlert>, IEmergencyAlertRepository
+    {
+        public Task<EmergencyAlert?> GetWithDetailsAsync(Guid alertId)
+            => Task.FromResult(Data.FirstOrDefault(a => a.Id == alertId));
+
+        public Task<(List<EmergencyAlert> Items, int Total)> GetPagedAsync(
+            Guid? clientProfileId, AlertStatus? status, int page, int size)
+        {
+            var q = Data.AsEnumerable();
+            if (clientProfileId.HasValue) q = q.Where(a => a.ClientProfileId == clientProfileId.Value);
+            if (status.HasValue) q = q.Where(a => a.Status == status.Value);
+            var all = q.OrderByDescending(a => a.CreatedAt).ToList();
+            var paged = all.Skip((page - 1) * size).Take(size).ToList();
+            return Task.FromResult((paged, all.Count));
+        }
+    }
+
+    public class FakeFamilyAccessRepository : FakeGenericRepository<FamilyAccess>, IFamilyAccessRepository
+    {
+        public Task<FamilyAccess?> GetWithUsersAsync(Guid accessId)
+            => Task.FromResult(Data.FirstOrDefault(f => f.Id == accessId));
+
+        public Task<List<FamilyAccess>> GetByClientUserIdAsync(Guid clientUserId)
+            => Task.FromResult(Data.Where(f => f.ClientUserId == clientUserId).ToList());
+
+        public Task<List<FamilyAccess>> GetByFamilyMemberUserIdAsync(Guid familyMemberUserId)
+            => Task.FromResult(Data.Where(f => f.FamilyMemberUserId == familyMemberUserId && f.IsApproved).ToList());
+
+        public Task<FamilyAccess?> GetByPairAsync(Guid clientUserId, Guid familyMemberUserId)
+            => Task.FromResult(Data.FirstOrDefault(f =>
+                f.ClientUserId == clientUserId && f.FamilyMemberUserId == familyMemberUserId));
+    }
     public class FakeVerificationDocumentRepository : FakeGenericRepository<VerificationDocument>, IVerificationDocumentRepository
     {
         public Task<(IEnumerable<VerificationDocument> Items, int Total)> GetPendingPagedAsync(int page, int size)
@@ -230,6 +278,7 @@ namespace HelpAtHome.Tests.Fakes
         public readonly FakeRefreshTokenRepository RefreshTokenRepo = new();
         public readonly FakeOtpCodeRepository OtpCodeRepo = new();
         public readonly FakeSupportTicketRepository SupportTicketRepo = new();
+        public readonly FakeTicketMessageRepository TicketMessageRepo = new();
         public readonly FakeNotificationRepository NotificationRepo = new();
         public readonly FakeCaregiverServiceRepository CaregiverServiceRepo = new();
         public readonly FakeReviewRepository ReviewRepo = new();
@@ -252,6 +301,7 @@ namespace HelpAtHome.Tests.Fakes
         IReviewRepository IUnitOfWork.Reviews => ReviewRepo;
         INotificationRepository IUnitOfWork.Notifications => NotificationRepo;
         ISupportTicketRepository IUnitOfWork.SupportTickets => SupportTicketRepo;
+        ITicketMessageRepository IUnitOfWork.TicketMessages => TicketMessageRepo;
         IEmergencyAlertRepository IUnitOfWork.EmergencyAlerts => EmergencyAlertRepo;
         IFamilyAccessRepository IUnitOfWork.FamilyAccesses => FamilyAccessRepo;
         IRefreshTokenRepository IUnitOfWork.RefreshTokens => RefreshTokenRepo;

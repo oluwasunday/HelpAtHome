@@ -19,6 +19,7 @@ namespace HelpAtHome.Application.Interfaces
         IReviewRepository Reviews { get; }
         INotificationRepository Notifications { get; }
         ISupportTicketRepository SupportTickets { get; }
+        ITicketMessageRepository TicketMessages { get; }
         IEmergencyAlertRepository EmergencyAlerts { get; }
         IFamilyAccessRepository FamilyAccesses { get; }
         IRefreshTokenRepository RefreshTokens { get; }

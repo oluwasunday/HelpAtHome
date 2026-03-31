@@ -24,6 +24,7 @@ namespace HelpAtHome.Infrastructure.Data
         public IReviewRepository Reviews { get; }
         public INotificationRepository Notifications { get; }
         public ISupportTicketRepository SupportTickets { get; }
+        public ITicketMessageRepository TicketMessages { get; }
         public IEmergencyAlertRepository EmergencyAlerts { get; }
         public IFamilyAccessRepository FamilyAccesses { get; }
         public IRefreshTokenRepository RefreshTokens { get; }
@@ -45,6 +46,7 @@ namespace HelpAtHome.Infrastructure.Data
             IReviewRepository reviews,
             INotificationRepository notifications,
             ISupportTicketRepository tickets,
+            ITicketMessageRepository ticketMessages,
             IEmergencyAlertRepository emergencies,
             IFamilyAccessRepository familyAccesses,
             IRefreshTokenRepository refreshTokens,
@@ -69,6 +71,7 @@ namespace HelpAtHome.Infrastructure.Data
             Reviews = reviews;
             Notifications = notifications;
             SupportTickets = tickets;
+            TicketMessages = ticketMessages;
             EmergencyAlerts = emergencies;
             FamilyAccesses = familyAccesses;
             RefreshTokens = refreshTokens;

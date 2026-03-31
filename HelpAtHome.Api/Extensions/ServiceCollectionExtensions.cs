@@ -61,12 +61,11 @@ namespace HelpAtHome.Api.Extensions
             services.AddScoped<ICaregiverService, CaregiverProfileService>();
             services.AddScoped<IAgencyService, AgencyService>();
             services.AddScoped<IAdminService, AdminService>();
-            //services.AddScoped<ISupportService, SupportService>();
-            //services.AddScoped<IEmergencyService, EmergencyService>();
-            //services.AddScoped<IFamilyAccessService, FamilyAccessService>();
+            services.AddScoped<ISupportService, SupportService>();
+            services.AddScoped<IEmergencyService, EmergencyService>();
+            services.AddScoped<IFamilyAccessService, FamilyAccessService>();
             //services.AddScoped<IBadgeService, BadgeService>();
             //services.AddScoped<IVerificationService, VerificationService>();
-            //services.AddScoped<IPaymentGatewayService, PaystackService>();
             //services.AddScoped<IAuditLogService, AuditLogService>();
             services.AddScoped<IJwtService, JwtService>();
 
@@ -92,6 +91,7 @@ namespace HelpAtHome.Api.Extensions
             services.AddScoped<INotificationRepository, NotificationRepository>();
 
             services.AddScoped<ISupportTicketRepository, SupportTicketRepository>();
+            services.AddScoped<ITicketMessageRepository, TicketMessageRepository>();
             services.AddScoped<IEmergencyAlertRepository, EmergencyAlertRepository>();
             services.AddScoped<IFamilyAccessRepository, FamilyAccessRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
