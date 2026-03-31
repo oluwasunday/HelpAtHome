@@ -139,7 +139,34 @@ namespace HelpAtHome.Tests.Fakes
     public class FakeSupportTicketRepository : FakeGenericRepository<SupportTicket>, ISupportTicketRepository { }
     public class FakeNotificationRepository : FakeGenericRepository<Notification>, INotificationRepository { }
     public class FakeCaregiverServiceRepository : FakeGenericRepository<CaregiverService>, ICaregiverServiceRepository { }
-    public class FakeReviewRepository : FakeGenericRepository<Review>, IReviewRepository { }
+    public class FakeReviewRepository : FakeGenericRepository<Review>, IReviewRepository
+    {
+        public Task<(List<Review> Items, int Total)> GetForCaregiverAsync(Guid caregiverUserId, int page, int size)
+        {
+            var all = Data.Where(r => r.RevieweeUserId == caregiverUserId && r.IsVisible)
+                .OrderByDescending(r => r.CreatedAt).ToList();
+            var paged = all.Skip((page - 1) * size).Take(size).ToList();
+            return Task.FromResult((paged, all.Count));
+        }
+
+        public Task<(List<Review> Items, int Total)> GetFlaggedAsync(int page, int size)
+        {
+            var all = Data.Where(r => r.IsFlagged).OrderByDescending(r => r.CreatedAt).ToList();
+            var paged = all.Skip((page - 1) * size).Take(size).ToList();
+            return Task.FromResult((paged, all.Count));
+        }
+
+        public Task<List<Review>> GetByBookingAsync(Guid bookingId)
+            => Task.FromResult(Data.Where(r => r.BookingId == bookingId).ToList());
+
+        public Task<(decimal AverageRating, int TotalReviews)> GetRatingStatsAsync(Guid caregiverUserId)
+        {
+            var reviews = Data.Where(r => r.RevieweeUserId == caregiverUserId && r.IsByClient && r.IsVisible).ToList();
+            if (reviews.Count == 0) return Task.FromResult((0m, 0));
+            var avg = Math.Round((decimal)reviews.Average(r => r.Rating), 1);
+            return Task.FromResult((avg, reviews.Count));
+        }
+    }
     public class FakeEmergencyAlertRepository : FakeGenericRepository<EmergencyAlert>, IEmergencyAlertRepository { }
     public class FakeFamilyAccessRepository : FakeGenericRepository<FamilyAccess>, IFamilyAccessRepository { }
     public class FakeVerificationDocumentRepository : FakeGenericRepository<VerificationDocument>, IVerificationDocumentRepository

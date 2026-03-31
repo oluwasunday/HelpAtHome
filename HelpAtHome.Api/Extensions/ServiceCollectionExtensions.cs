@@ -57,7 +57,7 @@ namespace HelpAtHome.Api.Extensions
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config["Paystack:SecretKey"]}");
             });
             services.AddScoped<INotificationService, NotificationService>();
-            //services.AddScoped<IReviewService, ReviewService>();
+            services.AddScoped<IReviewService, ReviewService>();
             services.AddScoped<ICaregiverService, CaregiverProfileService>();
             services.AddScoped<IAgencyService, AgencyService>();
             services.AddScoped<IAdminService, AdminService>();
