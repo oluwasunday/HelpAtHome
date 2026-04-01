@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using HelpAtHome.Application.Interfaces;
 using HelpAtHome.Application.Interfaces.Services;
+using HelpAtHome.Core.Constants;
 using HelpAtHome.Core.DTOs.Requests.Auth;
 using HelpAtHome.Core.DTOs.Responses.Auth;
 using HelpAtHome.Core.Entities;
 using HelpAtHome.Core.Enums;
 using HelpAtHome.Shared;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 
 namespace HelpAtHome.Application.Services
@@ -20,10 +22,12 @@ namespace HelpAtHome.Application.Services
         private readonly INotificationService _notification;
         //private readonly IAuditLogService _audit;
         private readonly IMapper _mapper;
+        private readonly int _accessTokenExpiryMinutes;
+        private readonly int _refreshTokenExpiryDays;
 
-        public AuthService(IUnitOfWork uow, UserManager<User> userManager, SignInManager<User> signInManager, 
-            IJwtService jwtService, INotificationService notification, //IAuditLogService audit, 
-            IMapper mapper)
+        public AuthService(IUnitOfWork uow, UserManager<User> userManager, SignInManager<User> signInManager,
+            IJwtService jwtService, INotificationService notification, //IAuditLogService audit,
+            IMapper mapper, IConfiguration config)
         {
             _uow = uow;
             _userManager = userManager;
@@ -32,6 +36,8 @@ namespace HelpAtHome.Application.Services
             _notification = notification;
             //_audit = audit;
             _mapper = mapper;
+            _accessTokenExpiryMinutes = config.GetValue<int>("Jwt:ExpiryMinutes", 60);
+            _refreshTokenExpiryDays   = config.GetValue<int>("Jwt:RefreshTokenExpiryDays", 30);
         }
 
         public async Task<Result<AuthResponseDto>> LoginAsync(LoginDto dto, string ip)
@@ -40,7 +46,9 @@ namespace HelpAtHome.Application.Services
             if (user == null || user.IsDeleted)
                 return Result<AuthResponseDto>.Fail("Invalid credentials");
             if (user.IsSuspended)
-                return Result<AuthResponseDto>.Fail("Account suspended: " + user.SuspensionReason);
+                return Result<AuthResponseDto>.Fail("Account is suspended: " + user.SuspensionReason);
+            if (!user.IsActive)
+                return Result<AuthResponseDto>.Fail("Account is inactive: " + user.SuspensionReason);
 
             // SignInManager checks password AND enforces Identity lockout policy.
             // Replaces manual BCrypt.Verify + FailedLoginAttempts + LockoutUntil logic.
@@ -66,7 +74,7 @@ namespace HelpAtHome.Application.Services
             {
                 UserId = user.Id,
                 Token = refreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(30),
+                ExpiresAt = DateTime.UtcNow.AddDays(_refreshTokenExpiryDays),
                 IpAddress = ip
             });
             await _uow.SaveChangesAsync();
@@ -78,7 +86,7 @@ namespace HelpAtHome.Application.Services
                 RefreshToken = refreshToken,
                 UserId = user.Id,
                 Role = user.Role,
-                ExpiresAt = DateTime.UtcNow.AddHours(1),
+                ExpiresAt = DateTime.UtcNow.AddMinutes(_accessTokenExpiryMinutes),
                 FullName = user.FullName,
                 Email = user.Email
             });
@@ -91,15 +99,6 @@ namespace HelpAtHome.Application.Services
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             await _notification.SendPasswordResetEmailAsync(user.Email!, token, user.FullName);
             return Result.Ok();
-        }
-
-        public async Task<Result> ChangePasswordAsync(Guid userId, ChangePasswordDto dto)
-        {
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null) return Result.Fail("User not found");
-            var result = await _userManager.ChangePasswordAsync(user, dto.OldPassword, dto.NewPassword);
-            return result.Succeeded ? Result.Ok()
-                : Result.Fail(string.Join(", ", result.Errors.Select(e => e.Description)));
         }
 
         public async Task<Result<AuthResponseDto>> RegisterClientAsync(RegisterClientDto dto)
@@ -425,7 +424,7 @@ namespace HelpAtHome.Application.Services
             {
                 UserId = user.Id,
                 Token = newRefreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(30),
+                ExpiresAt = DateTime.UtcNow.AddDays(_refreshTokenExpiryDays),
                 IpAddress = ipAddress
             });
             await _uow.SaveChangesAsync();
@@ -441,7 +440,7 @@ namespace HelpAtHome.Application.Services
                 Email = user.Email!,
                 IsEmailConfirmed = user.EmailConfirmed,
                 IsPhoneConfirmed = user.PhoneNumberConfirmed,
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
+                ExpiresAt = DateTime.UtcNow.AddMinutes(_accessTokenExpiryMinutes)
             });
         }
 
@@ -468,7 +467,7 @@ namespace HelpAtHome.Application.Services
 
             // Invalidate any existing active email OTPs for this user
             var existing = await _uow.OtpCodes.FindAsync(
-                o => o.UserId == userId && o.Purpose == "EmailVerify" && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
+                o => o.UserId == userId && o.Purpose == OtpPurpose.EmailVerify && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
             foreach (var old in existing)
             {
                 old.IsUsed = true;
@@ -481,7 +480,7 @@ namespace HelpAtHome.Application.Services
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 Code = code,
-                Purpose = "EmailVerify",
+                Purpose = OtpPurpose.EmailVerify,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(10)
             });
             await _uow.SaveChangesAsync();
@@ -497,7 +496,7 @@ namespace HelpAtHome.Application.Services
         public async Task<Result> VerifyEmailOtpAsync(Guid userId, string otp)
         {
             var otpRecord = await _uow.OtpCodes.FirstOrDefaultAsync(
-                o => o.UserId == userId && o.Purpose == "EmailVerify" && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
+                o => o.UserId == userId && o.Purpose == OtpPurpose.EmailVerify && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
 
             if (otpRecord == null)
                 return Result.Fail("Invalid or expired OTP. Please request a new code.");
@@ -543,7 +542,7 @@ namespace HelpAtHome.Application.Services
 
             // Invalidate any existing active phone OTPs for this user
             var existing = await _uow.OtpCodes.FindAsync(
-                o => o.UserId == userId && o.Purpose == "PhoneVerify" && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
+                o => o.UserId == userId && o.Purpose == OtpPurpose.PhoneVerify && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
             foreach (var old in existing)
             {
                 old.IsUsed = true;
@@ -556,7 +555,7 @@ namespace HelpAtHome.Application.Services
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 Code = code,
-                Purpose = "PhoneVerify",
+                Purpose = OtpPurpose.PhoneVerify,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(10)
             });
             await _uow.SaveChangesAsync();
@@ -570,7 +569,7 @@ namespace HelpAtHome.Application.Services
         public async Task<Result> VerifyPhoneOtpAsync(Guid userId, string otp)
         {
             var otpRecord = await _uow.OtpCodes.FirstOrDefaultAsync(
-                o => o.UserId == userId && o.Purpose == "PhoneVerify" && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
+                o => o.UserId == userId && o.Purpose == OtpPurpose.PhoneVerify && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
 
             if (otpRecord == null)
                 return Result.Fail("Invalid or expired OTP. Please request a new code.");
@@ -610,14 +609,28 @@ namespace HelpAtHome.Application.Services
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if (user == null)
-            {
                 return Result.Fail("User not found");
-            }
 
             var result = await _userManager.ResetPasswordAsync(user, dto.Token, dto.NewPassword);
-            if (result.Succeeded)
-                return Result.Ok();
-            return Result.Fail("Failed to reset password");
+            if (!result.Succeeded)
+                return Result.Fail("Failed to reset password");
+
+            // Invalidate all active sessions — forces re-login on all devices
+            await RevokeAllRefreshTokensAsync(user.Id, "PasswordReset");
+            return Result.Ok();
+        }
+
+        public async Task<Result> ChangePasswordAsync(Guid userId, ChangePasswordDto dto)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null) return Result.Fail("User not found");
+            var result = await _userManager.ChangePasswordAsync(user, dto.OldPassword, dto.NewPassword);
+            if (!result.Succeeded)
+                return Result.Fail(string.Join(", ", result.Errors.Select(e => e.Description)));
+
+            // Invalidate all active sessions — forces re-login on all devices
+            await RevokeAllRefreshTokensAsync(userId, "PasswordChanged");
+            return Result.Ok();
         }
 
         // ── Private helpers ───────────────────────────────────────────────
@@ -690,7 +703,7 @@ namespace HelpAtHome.Application.Services
             {
                 UserId = user.Id,
                 Token = refreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(30)
+                ExpiresAt = DateTime.UtcNow.AddDays(_refreshTokenExpiryDays)
             });
             await _uow.SaveChangesAsync();
             return new AuthResponseDto
@@ -704,7 +717,7 @@ namespace HelpAtHome.Application.Services
                 Email = user.Email!,
                 IsEmailConfirmed = user.EmailConfirmed,
                 IsPhoneConfirmed = user.PhoneNumberConfirmed,
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
+                ExpiresAt = DateTime.UtcNow.AddMinutes(_accessTokenExpiryMinutes)
             };
         }
 
@@ -713,80 +726,25 @@ namespace HelpAtHome.Application.Services
         {
             return Random.Shared.Next(100_000, 999_999).ToString();
         }
+
+        // Revokes every active refresh token for a user (called after password change/reset)
+        private async Task RevokeAllRefreshTokensAsync(Guid userId, string reason)
+        {
+            var tokens = await _uow.RefreshTokens.FindAsync(
+                t => t.UserId == userId && !t.IsRevoked && t.ExpiresAt > DateTime.UtcNow);
+            foreach (var t in tokens)
+            {
+                t.IsRevoked = true;
+                t.RevokedReason = reason;
+                _uow.RefreshTokens.Update(t);
+            }
+            if (tokens.Any())
+                await _uow.SaveChangesAsync();
+        }
     }
 
 
 
 
-
-    /*public class AuthService2 : IAuthService
-    {
-        private readonly IUnitOfWork _uow;
-        private readonly UserManager<User> _userManager;
-        private readonly SignInManager<User> _signInManager;
-        private readonly IJwtService _jwtService;
-        private readonly INotificationService _notification;
-        private readonly IAuditLogService _audit;
-        private readonly IMapper _mapper;
-
-        public async Task<Result<AuthResponseDto>> LoginAsync(LoginDto dto, string ip)
-        {
-            var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null || user.IsDeleted)
-                return Result<AuthResponseDto>.Fail("Invalid credentials");
-            if (user.IsSuspended)
-                return Result<AuthResponseDto>.Fail("Account suspended: " + user.SuspensionReason);
-            var signIn = await _signInManager.CheckPasswordSignInAsync(
-                user, dto.Password, lockoutOnFailure: true);
-            if (signIn.IsLockedOut)
-                return Result<AuthResponseDto>.Fail($"Account locked until {user.LockoutEnd?.UtcDateTime:HH:mm UTC}.");
-            if (!signIn.Succeeded)
-                return Result<AuthResponseDto>.Fail("Invalid credentials");
-            user.LastLoginAt = DateTime.UtcNow; user.LastLoginIp = ip;
-            await _userManager.UpdateAsync(user);
-            var roles = await _userManager.GetRolesAsync(user);
-            var claims = await _userManager.GetClaimsAsync(user);
-            var accessToken = _jwtService.GenerateAccessToken(user, roles, claims);
-            var refreshToken = _jwtService.GenerateRefreshToken();
-            await _uow.RefreshTokens.AddAsync(new RefreshToken
-            {
-                UserId = user.Id,
-                Token = refreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(30),
-                IpAddress = ip
-            });
-            await _uow.SaveChangesAsync();
-            await _audit.LogAsync(user.Id.ToString(), user.Role.ToString(),
-                AuditAction.Login, "User", user.Id.ToString(), ipAddress: ip);
-            return Result<AuthResponseDto>.Ok(new AuthResponseDto
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                UserId = user.Id,
-                Role = user.Role,
-                FullName = user.FullName,
-                Email = user.Email!,
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
-            });
-        }
-
-        public async Task<Result> ForgotPasswordAsync(string email)
-        {
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null) return Result.Ok();
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            await _notification.SendPasswordResetEmailAsync(user.Email!, token, user.FullName);
-            return Result.Ok();
-        }
-
-        public async Task<Result> ChangePasswordAsync(Guid userId, ChangePasswordDto dto)
-        {
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null) return Result.Fail("User not found");
-            var result = await _userManager.ChangePasswordAsync(user, dto.OldPassword, dto.NewPassword);
-            return result.Succeeded ? Result.Ok()
-                : Result.Fail(string.Join(", ", result.Errors.Select(e => e.Description)));
-        }
-    }*/
 
 }

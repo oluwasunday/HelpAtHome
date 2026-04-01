@@ -38,19 +38,16 @@ namespace HelpAtHome.Application.Repositories
 
         public void Update(T entity) { _dbSet.Update(entity); }
 
+        /// <summary>
+        /// This sets the isdeleted field to true and update the context thereafter. User do not need to call the generic Update method again
+        /// </summary>
+        /// <param name="entity"></param>
         public void SoftDelete(T entity)
-        { entity.IsDeleted = true; entity.DeletedAt = DateTime.UtcNow; Update(entity); }
-
-        /*public async Task<PagedResult<T>> GetPagedAsync(int page, int pageSize, Expression<Func<T, bool>>? filter = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, params Expression<Func<T, object>>[] includes)
         {
-            IQueryable<T> query = _dbSet.Where(e => !e.IsDeleted);
-            if (filter != null) query = query.Where(filter);
-            foreach (var include in includes) query = query.Include(include);
-            if (orderBy != null) query = orderBy(query);
-            var total = await query.CountAsync();
-            var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-            return new PagedResult<T>(items, total, page, pageSize);
-        }*/
+            entity.IsDeleted = true;
+            entity.DeletedAt = DateTime.UtcNow;
+            Update(entity);
+        }
     }
 
 }

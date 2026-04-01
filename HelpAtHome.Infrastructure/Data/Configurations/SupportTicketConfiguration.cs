@@ -32,6 +32,8 @@ namespace HelpAtHome.Infrastructure.Data.Configurations
             builder.HasIndex(t => t.IsDispute);
             builder.HasIndex(t => t.Priority);
             builder.HasIndex(t => t.IsDeleted);
+            // Composite: admin queue — find tickets assigned to a specific admin by status
+            builder.HasIndex(t => new { t.AssignedToAdminId, t.Status });
 
             // ── Relationships ────────────────────────────────────────────
             builder.HasOne(t => t.RaisedBy)

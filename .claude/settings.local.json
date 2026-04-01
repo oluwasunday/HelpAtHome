@@ -4,7 +4,13 @@
       "Bash(dotnet build:*)",
       "Bash(find /c/PersonalGit/HelpAtHome -type f -name *.cs)",
       "Bash(xargs grep:*)",
-      "Bash(dotnet test:*)"
+      "Bash(dotnet test:*)",
+      "Bash(dotnet ef:*)",
+      "Bash(dotnet run:*)",
+      "Bash(ASPNETCORE_ENVIRONMENT=Development dotnet run --project HelpAtHome.Api)",
+      "Bash(powershell -Command \"Get-Process dotnet -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host 'killed'\")",
+      "Bash(powershell -Command \"Get-Process dotnet -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(powershell -Command \"Get-Process dotnet -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue\")"
     ]
   }
 }

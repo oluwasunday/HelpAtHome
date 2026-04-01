@@ -24,7 +24,9 @@ namespace HelpAtHome.Infrastructure.Data.Configurations
             // One family member can only be granted access once per client
             builder.HasIndex(f => new { f.ClientUserId, f.FamilyMemberUserId }).IsUnique();
             builder.HasIndex(f => f.FamilyMemberUserId);
-            //builder.HasIndex(f => f.IsDeleted);
+            // Access-check query: find approved, non-revoked grants for a client
+            builder.HasIndex(f => new { f.ClientUserId, f.IsApproved, f.IsDeleted });
+            builder.HasIndex(f => f.IsDeleted);
 
             // ── Relationships ────────────────────────────────────────────
             builder.HasOne(f => f.Client)

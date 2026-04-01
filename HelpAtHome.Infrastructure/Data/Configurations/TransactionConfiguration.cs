@@ -39,11 +39,9 @@ namespace HelpAtHome.Infrastructure.Data.Configurations
             builder.HasIndex(t => t.WalletId);
             builder.HasIndex(t => t.BookingId);
             builder.HasIndex(t => t.PaystackReference); // for idempotency check
-            // Composite index on WalletId and TransactionDate
+            // Composite: wallet transaction history ordered by date
+            builder.HasIndex(t => new { t.WalletId, t.CreatedAt });
             builder.HasIndex(t => new { t.BookingId, t.CreatedAt });
-            //builder.HasIndex(t => t.Status);
-            //builder.HasIndex(t => t.CreatedAt);
-            //builder.HasIndex(t => t.IsDeleted);
 
             // ── Relationships ────────────────────────────────────────────
             builder.HasOne(t => t.Wallet)

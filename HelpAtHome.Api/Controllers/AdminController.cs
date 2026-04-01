@@ -1,3 +1,4 @@
+using HelpAtHome.Api.Extensions;
 using HelpAtHome.Application.Interfaces.Services;
 using HelpAtHome.Core.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
@@ -34,9 +35,11 @@ namespace HelpAtHome.Api.Controllers
         /// <summary>Get high-level platform statistics for the admin dashboard.</summary>
         [HttpGet("dashboard")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetDashboard()
         {
             var res = await _adminService.GetDashboardAsync();
+            if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(res.Data);
         }
 
@@ -45,9 +48,11 @@ namespace HelpAtHome.Api.Controllers
         /// <summary>Get a paginated, filterable list of all platform users.</summary>
         [HttpGet("users")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetUsers([FromQuery] AdminUserFilterDto filter)
         {
             var res = await _adminService.GetUsersAsync(filter);
+            if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(res.Data);
         }
 
@@ -68,7 +73,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> SuspendUser(Guid id, [FromBody] SuspendUserDto dto)
         {
-            var adminId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var adminId = User.GetUserId();
             var res = await _adminService.SuspendUserAsync(adminId, id, dto);
             if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(new { Message = "User suspended successfully" });
@@ -80,7 +85,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UnsuspendUser(Guid id)
         {
-            var adminId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var adminId = User.GetUserId();
             var res = await _adminService.UnsuspendUserAsync(adminId, id);
             if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(new { Message = "User unsuspended successfully" });
@@ -92,7 +97,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
-            var adminId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var adminId = User.GetUserId();
             var res = await _adminService.DeleteUserAsync(adminId, id);
             if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(new { Message = "User deleted successfully" });
@@ -103,9 +108,11 @@ namespace HelpAtHome.Api.Controllers
         /// <summary>Get a paginated list of caregiver verification documents awaiting review.</summary>
         [HttpGet("documents/pending")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetPendingDocuments(int page = 1, int size = 20)
         {
             var res = await _adminService.GetPendingDocumentsAsync(page, size);
+            if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(res.Data);
         }
 
@@ -115,7 +122,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ReviewDocument(Guid id, [FromBody] ReviewDocumentDto dto)
         {
-            var adminId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var adminId = User.GetUserId();
             var res = await _adminService.ReviewDocumentAsync(adminId, id, dto);
             if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(new { Message = dto.IsApproved ? "Document approved" : "Document rejected" });
@@ -129,7 +136,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> SetCommission(Guid id, [FromBody] SetCommissionDto dto)
         {
-            var adminId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var adminId = User.GetUserId();
             var res = await _adminService.SetAgencyCommissionAsync(adminId, id, dto);
             if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(new { Message = "Commission rates updated" });
@@ -140,9 +147,11 @@ namespace HelpAtHome.Api.Controllers
         /// <summary>Get a paginated list of bookings currently in a disputed state.</summary>
         [HttpGet("disputes")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetOpenDisputes(int page = 1, int size = 20)
         {
             var res = await _adminService.GetOpenDisputesAsync(page, size);
+            if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(res.Data);
         }
 
@@ -152,7 +161,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ResolveDispute(Guid id, [FromBody] ResolveDisputeDto dto)
         {
-            var adminId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var adminId = User.GetUserId();
             var res = await _bookingService.AdminResolveDisputeAsync(adminId, id, dto.Resolution, dto.RefundClient);
             if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(new { Message = "Dispute resolved successfully" });

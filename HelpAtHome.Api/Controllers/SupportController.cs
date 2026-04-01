@@ -1,3 +1,4 @@
+using HelpAtHome.Api.Extensions;
 using HelpAtHome.Application.Interfaces.Services;
 using HelpAtHome.Core.DTOs.Requests;
 using HelpAtHome.Core.Enums;
@@ -26,7 +27,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateTicket([FromBody] CreateTicketDto dto)
         {
-            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var userId = User.GetUserId();
             var res = await _support.CreateTicketAsync(userId, dto);
             if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return StatusCode(StatusCodes.Status201Created, res.Data);
@@ -37,7 +38,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMyTickets(int page = 1, int size = 10)
         {
-            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var userId = User.GetUserId();
             var res = await _support.GetMyTicketsAsync(userId, page, size);
             return Ok(res.Data);
         }
@@ -48,7 +49,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetTicket(Guid id)
         {
-            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var userId = User.GetUserId();
             var isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
             var res = await _support.GetTicketAsync(userId, id, isAdmin);
             if (!res.IsSuccess) return NotFound(new { Message = res.ErrorMessage });
@@ -61,7 +62,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddMessage(Guid id, [FromBody] AddTicketMessageDto dto)
         {
-            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var userId = User.GetUserId();
             var res = await _support.AddMessageAsync(userId, id, dto);
             if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return StatusCode(StatusCodes.Status201Created, res.Data);
@@ -90,7 +91,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AssignTicket(Guid id, [FromBody] AssignTicketDto dto)
         {
-            var adminId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var adminId = User.GetUserId();
             var res = await _support.AssignTicketAsync(adminId, id, dto);
             if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(new { Message = "Ticket assigned." });
@@ -103,7 +104,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateTicketStatusDto dto)
         {
-            var adminId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var adminId = User.GetUserId();
             var res = await _support.UpdateStatusAsync(adminId, id, dto);
             if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(new { Message = "Ticket status updated." });
@@ -116,7 +117,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ResolveTicket(Guid id, [FromBody] ResolveTicketDto dto)
         {
-            var adminId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var adminId = User.GetUserId();
             var res = await _support.ResolveTicketAsync(adminId, id, dto);
             if (!res.IsSuccess) return BadRequest(new { Message = res.ErrorMessage });
             return Ok(new { Message = "Ticket resolved." });

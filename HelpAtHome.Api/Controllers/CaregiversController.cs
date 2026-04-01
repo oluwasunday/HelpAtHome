@@ -81,11 +81,11 @@ namespace HelpAtHome.Api.Controllers
         }
 
         /// <summary>Toggle the authenticated caregiver's availability status on or off.</summary>
-        [HttpPost("{id}/availability")]
+        [HttpPost("availability")]
         [Authorize(Roles = "IndividualCaregiver,AgencyCaregiver")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> ToggleAvailability(Guid id)
+        public async Task<IActionResult> ToggleAvailability()
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await _caregiverService.ToggleAvailabilityAsync(userId);

@@ -8,6 +8,7 @@ using HelpAtHome.Core.Enums;
 using HelpAtHome.Tests.Fakes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Moq;
 using System.Security.Claims;
 
@@ -59,7 +60,8 @@ namespace HelpAtHome.Tests.Services
                         .Returns(Task.CompletedTask);
 
             var mapper = new Mock<AutoMapper.IMapper>();
-            var svc = new AuthService(uow, um.Object, sim.Object, jwt.Object, notification.Object, mapper.Object);
+            var config = new ConfigurationBuilder().Build();
+            var svc = new AuthService(uow, um.Object, sim.Object, jwt.Object, notification.Object, mapper.Object, config);
             return (svc, uow, um, jwt, notification);
         }
 
@@ -114,7 +116,7 @@ namespace HelpAtHome.Tests.Services
             // Rebuild service with updated sign-in manager
             var mapper = new Mock<AutoMapper.IMapper>();
             var notification = new Mock<INotificationService>();
-            var loginSvc = new AuthService(uow, um.Object, sim.Object, jwt.Object, notification.Object, mapper.Object);
+            var loginSvc = new AuthService(uow, um.Object, sim.Object, jwt.Object, notification.Object, mapper.Object, new ConfigurationBuilder().Build());
 
             var result = await loginSvc.LoginAsync(new LoginDto { Email = user.Email!, Password = "Password1!" }, "127.0.0.1");
 
@@ -164,7 +166,7 @@ namespace HelpAtHome.Tests.Services
             um.Setup(m => m.FindByEmailAsync(user.Email!)).ReturnsAsync(user);
 
             var mapper = new Mock<AutoMapper.IMapper>();
-            var loginSvc = new AuthService(uow, um.Object, sim.Object, jwt.Object, notification.Object, mapper.Object);
+            var loginSvc = new AuthService(uow, um.Object, sim.Object, jwt.Object, notification.Object, mapper.Object, new ConfigurationBuilder().Build());
 
             var result = await loginSvc.LoginAsync(new LoginDto { Email = user.Email!, Password = "wrong" }, "ip");
 
@@ -185,7 +187,7 @@ namespace HelpAtHome.Tests.Services
             um.Setup(m => m.FindByEmailAsync(user.Email!)).ReturnsAsync(user);
 
             var mapper = new Mock<AutoMapper.IMapper>();
-            var loginSvc = new AuthService(uow, um.Object, sim.Object, jwt.Object, notification.Object, mapper.Object);
+            var loginSvc = new AuthService(uow, um.Object, sim.Object, jwt.Object, notification.Object, mapper.Object, new ConfigurationBuilder().Build());
 
             var result = await loginSvc.LoginAsync(new LoginDto { Email = user.Email!, Password = "pass" }, "ip");
 

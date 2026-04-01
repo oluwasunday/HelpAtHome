@@ -27,11 +27,6 @@ namespace HelpAtHome.Api.Extensions
     {
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration config)
         {
-            // ... service registrations ...
-            services.Configure<MongoDbSettings>(config.GetSection("MongoDb"));
-            services.AddSingleton<MongoDbContext>();
-
-
             // ─── MongoDB ────────────────────────────────────────────────────────
             services.Configure<MongoDbSettings>(config.GetSection("MongoDb"));
             services.AddSingleton<MongoDbContext>();
@@ -44,6 +39,8 @@ namespace HelpAtHome.Api.Extensions
             });
 
             // ─── Application Services ───────────────────────────────────────────
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUser, CurrentUserService>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IBookingService, BookingService>();
@@ -71,7 +68,6 @@ namespace HelpAtHome.Api.Extensions
             services.AddScoped<IJwtService, JwtService>();
 
             services.AddScoped<IFirebasePush, FirebasePushSender>();
-            services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<ISmsSender, TwilioSmsSender>();
             services.AddScoped<IEmailSender, MailKitEmailSender>();
 

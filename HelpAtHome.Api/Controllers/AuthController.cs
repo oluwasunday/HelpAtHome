@@ -1,6 +1,6 @@
+using HelpAtHome.Api.Extensions;
 using HelpAtHome.Application.Interfaces.Services;
 using HelpAtHome.Core.DTOs.Requests.Auth;
-using HelpAtHome.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -75,7 +75,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Logout([FromBody] string refreshToken)
         {
-            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var userId = User.GetUserId();
             var result = await _authService.LogoutAsync(userId, refreshToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
@@ -87,7 +87,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> VerifyEmail([FromBody] VerifyOtpDto dto)
         {
-            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var userId = User.GetUserId();
             var result = await _authService.VerifyEmailOtpAsync(userId, dto.Otp);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
@@ -99,7 +99,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ResendEmailOtp()
         {
-            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var userId = User.GetUserId();
             var result = await _authService.SendEmailOtpAsync(userId);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
@@ -111,7 +111,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> SendPhoneOtp()
         {
-            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var userId = User.GetUserId();
             var result = await _authService.SendPhoneOtpAsync(userId);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
@@ -123,7 +123,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> VerifyPhone([FromBody] VerifyOtpDto dto)
         {
-            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var userId = User.GetUserId();
             var result = await _authService.VerifyPhoneOtpAsync(userId, dto.Otp);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
@@ -144,10 +144,6 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
         {
-            if (!ModelState.IsValid)
-            {
-                //
-            }
             var result = await _authService.ResetPasswordAsync(dto);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }

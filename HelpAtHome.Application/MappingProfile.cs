@@ -50,7 +50,9 @@ namespace HelpAtHome.Application
             // ── ClientProfile ─────────────────────────────────────────
             CreateMap<ClientProfile, ClientProfileDto>()
                 .ForMember(d => d.CaregiverGenderPreference,
-                    o => o.MapFrom(s => s.Gender.ToString()));
+                    o => o.MapFrom(s => s.CareGiverGenderPreference.ToString()))
+                .ForMember(d => d.Address,
+                    o => o.MapFrom(s => s.Address));
 
             // ── Agency ───────────────────────────────────────────────
             CreateMap<Agency, AgencySummaryDto>()
@@ -119,11 +121,6 @@ namespace HelpAtHome.Application
             CreateMap<AddressUpsertDto, ClientAddress>().ReverseMap();
             CreateMap<AddressUpsertDto, AgencyAddress>().ReverseMap();
             CreateMap<AddressUpsertDto, CaregiverAddress>().ReverseMap();
-
-            // ── Update ClientProfile mapping to include nested Address ────────────
-            CreateMap<ClientProfile, ClientProfileDto>()
-                .ForMember(d => d.Address,
-                           o => o.MapFrom(s => s.Address));
 
             // ── Update CaregiverProfile mapping ──────────────────────────────────
             CreateMap<CaregiverProfile, CaregiverProfileDto>()

@@ -116,8 +116,16 @@ try
     builder.Services.AddAutoMapper(typeof(MappingProfile));
     builder.Services.AddFluentValidationAutoValidation();
     builder.Services.AddValidatorsFromAssemblyContaining<RegisterClientDtoValidator>();
+    var allowedOrigins = (config["App:AllowedOrigins"] ?? config["App:ClientBaseUrl"] ?? string.Empty)
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
     builder.Services.AddCors(options => options.AddPolicy("CorsPolicy", p =>
-        p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+    {
+        if (builder.Environment.IsDevelopment())
+            p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        else
+            p.WithOrigins(allowedOrigins).AllowAnyMethod().AllowAnyHeader().AllowCredentials();
+    }));
 
     // ── Brevo email HTTP client ─────────────────────────────────────────────
     builder.Services.AddHttpClient("Brevo", client =>

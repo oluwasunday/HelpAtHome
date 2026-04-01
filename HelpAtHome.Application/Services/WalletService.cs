@@ -115,8 +115,7 @@ namespace HelpAtHome.Application.Services
             if (wallet == null) return Result.Fail("Wallet not found.");
 
             var balanceBefore = wallet.Balance;
-            wallet.Balance     += amount;
-            wallet.TotalEarned += amount;
+            wallet.Balance += amount;
             _uow.Wallets.Update(wallet);
 
             // Update the pending transaction record if it exists, else create a new one
@@ -217,6 +216,7 @@ namespace HelpAtHome.Application.Services
         public async Task<Result<PagedResult<TransactionDto>>> GetTransactionsAsync(
             Guid userId, int page, int size)
         {
+            size = Math.Clamp(size, 1, 100);
             var wallet = await _uow.Wallets.GetByUserIdAsync(userId);
             if (wallet == null)
                 return Result<PagedResult<TransactionDto>>.Fail("Wallet not found.");

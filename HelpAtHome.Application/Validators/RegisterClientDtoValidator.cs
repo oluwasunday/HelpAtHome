@@ -20,6 +20,10 @@ namespace HelpAtHome.Application.Validators
                 .Matches("[0-9]").WithMessage("Password must contain a digit");
             RuleFor(x => x.ConfirmPassword).Equal(x => x.Password)
                 .WithMessage("Passwords do not match");
+            RuleFor(x => x.DateOfBirth)
+                .Must(dob => dob <= DateTime.UtcNow.AddYears(-18))
+                .WithMessage("You must be at least 18 years old to register");
+            RuleFor(x => x.Address).NotNull().SetValidator(new AddressUpsertDtoValidator());
         }
     }
 

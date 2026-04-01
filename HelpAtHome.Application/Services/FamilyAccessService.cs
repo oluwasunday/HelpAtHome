@@ -174,9 +174,9 @@ namespace HelpAtHome.Application.Services
 
         public async Task<Result<FamilyClientViewDto>> GetClientViewAsync(Guid familyMemberUserId, Guid clientUserId)
         {
-            // Verify approved access
+            // Verify approved, non-revoked access
             var access = await _uow.FamilyAccesses.GetByPairAsync(clientUserId, familyMemberUserId);
-            if (access == null || !access.IsApproved)
+            if (access == null || !access.IsApproved || access.IsDeleted)
                 return Result<FamilyClientViewDto>.Fail("You do not have approved access to this client.");
 
             var clientProfile = await _uow.ClientProfiles.FirstOrDefaultAsync(c => c.UserId == clientUserId);

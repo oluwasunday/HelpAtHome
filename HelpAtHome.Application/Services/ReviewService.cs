@@ -84,35 +84,45 @@ namespace HelpAtHome.Application.Services
                 IsFlagged = false
             };
 
-            await _uow.Reviews.AddAsync(review);
-
-            // Mark booking as reviewed
-            if (isByClient)
-                booking.IsReviewedByClient = true;
-            else
-                booking.IsReviewedByCaregiver = true;
-            _uow.Bookings.Update(booking);
-
-            // Update caregiver average rating (only client→caregiver reviews count)
-            if (isByClient)
+            await _uow.BeginTransactionAsync();
+            try
             {
-                var stats = await _uow.Reviews.GetRatingStatsAsync(revieweeUserId);
-                // Include the new review in the calc (not yet saved, so compute inline)
-                var existingCount = stats.TotalReviews;
-                var existingSum = stats.AverageRating * existingCount;
-                var newTotal = existingCount + 1;
-                var newAvg = Math.Round((existingSum + dto.Rating) / newTotal, 1);
+                await _uow.Reviews.AddAsync(review);
 
-                var cp = await _uow.CaregiverProfiles.FirstOrDefaultAsync(c => c.UserId == revieweeUserId);
-                if (cp != null)
+                // Mark booking as reviewed
+                if (isByClient)
+                    booking.IsReviewedByClient = true;
+                else
+                    booking.IsReviewedByCaregiver = true;
+                _uow.Bookings.Update(booking);
+
+                // Update caregiver average rating (only client→caregiver reviews count)
+                if (isByClient)
                 {
-                    cp.AverageRating = newAvg;
-                    cp.TotalReviews = (int)newTotal;
-                    _uow.CaregiverProfiles.Update(cp);
-                }
-            }
+                    var stats = await _uow.Reviews.GetRatingStatsAsync(revieweeUserId);
+                    // Include the new review in the calc (not yet saved, so compute inline)
+                    var existingCount = stats.TotalReviews;
+                    var existingSum = stats.AverageRating * existingCount;
+                    var newTotal = existingCount + 1;
+                    var newAvg = Math.Round((existingSum + dto.Rating) / newTotal, 1);
 
-            await _uow.SaveChangesAsync();
+                    var cp = await _uow.CaregiverProfiles.FirstOrDefaultAsync(c => c.UserId == revieweeUserId);
+                    if (cp != null)
+                    {
+                        cp.AverageRating = newAvg;
+                        cp.TotalReviews = (int)newTotal;
+                        _uow.CaregiverProfiles.Update(cp);
+                    }
+                }
+
+                await _uow.SaveChangesAsync();
+                await _uow.CommitAsync();
+            }
+            catch
+            {
+                await _uow.RollbackAsync();
+                throw;
+            }
 
             var saved = await _uow.Reviews.FirstOrDefaultAsync(r => r.Id == review.Id);
             // Load navigation for mapping

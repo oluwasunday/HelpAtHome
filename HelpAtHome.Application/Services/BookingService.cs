@@ -13,7 +13,7 @@ namespace HelpAtHome.Application.Services
 {
     public class BookingService : IBookingService
     {
-        public readonly IUnitOfWork _uow;
+        private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
         private readonly INotificationService _notification;
         private readonly IConfiguration _config;

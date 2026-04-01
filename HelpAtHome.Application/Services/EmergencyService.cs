@@ -54,7 +54,7 @@ namespace HelpAtHome.Application.Services
             // Notify family members who opted in for emergency alerts
             var familyAccesses = await _uow.FamilyAccesses.GetByClientUserIdAsync(clientUserId);
             var notifiedFamily = false;
-            foreach (var access in familyAccesses.Where(f => f.IsApproved && f.ReceiveEmergencyAlerts))
+            foreach (var access in familyAccesses.Where(f => f.IsApproved && !f.IsDeleted && f.ReceiveEmergencyAlerts))
             {
                 await _notifications.SendAsync(
                     access.FamilyMemberUserId,
@@ -108,9 +108,9 @@ namespace HelpAtHome.Application.Services
 
             if (!isAdmin && !isClient)
             {
-                // Check if user is an approved family member
+                // Check if user is an approved, non-revoked family member
                 var access = await _uow.FamilyAccesses.GetByPairAsync(alert.ClientProfile.UserId, userId);
-                if (access == null || !access.IsApproved)
+                if (access == null || !access.IsApproved || access.IsDeleted)
                     return Result<EmergencyAlertDto>.Fail("Access denied.");
             }
 
@@ -137,6 +137,11 @@ namespace HelpAtHome.Application.Services
 
         public async Task<Result<EmergencyAlertDto>> RespondToAlertAsync(Guid responderId, Guid alertId, RespondAlertDto dto)
         {
+            // Only admins may respond to / close emergency alerts
+            var responder = await _uow.Users.GetByIdWithProfileAsync(responderId);
+            if (responder == null || (responder.Role != UserRole.Admin && responder.Role != UserRole.SuperAdmin))
+                return Result<EmergencyAlertDto>.Fail("Only administrators can respond to emergency alerts.");
+
             var alert = await _uow.EmergencyAlerts.GetWithDetailsAsync(alertId);
             if (alert == null)
                 return Result<EmergencyAlertDto>.Fail("Alert not found.");
@@ -161,7 +166,7 @@ namespace HelpAtHome.Application.Services
 
             // Notify family members
             var familyAccesses = await _uow.FamilyAccesses.GetByClientUserIdAsync(alert.ClientProfile.UserId);
-            foreach (var access in familyAccesses.Where(f => f.IsApproved && f.ReceiveEmergencyAlerts))
+            foreach (var access in familyAccesses.Where(f => f.IsApproved && !f.IsDeleted && f.ReceiveEmergencyAlerts))
             {
                 await _notifications.SendAsync(
                     access.FamilyMemberUserId,

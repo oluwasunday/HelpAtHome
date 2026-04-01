@@ -1,6 +1,6 @@
+using HelpAtHome.Api.Extensions;
 using HelpAtHome.Application.Interfaces.Services;
 using HelpAtHome.Core.DTOs.Requests;
-using HelpAtHome.Core.Entities;
 using HelpAtHome.Core.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +17,7 @@ namespace HelpAtHome.Api.Controllers
         private readonly IBookingService _bookingService;
         public BookingsController(IBookingService bookingService) { _bookingService = bookingService; }
 
-        private Guid GetUserId() => Guid.Parse(User.FindFirst("sub")!.Value);
+        private Guid GetUserId() => User.GetUserId();
 
         /// <summary>Create a new booking request for a caregiver. Client role required.</summary>
         [HttpPost]
