@@ -49,12 +49,14 @@ namespace HelpAtHome.Application.Services
             if (caregiver == null || !caregiver.IsAvailable)
                 return Result<BookingDto>.Fail("Caregiver is not available.");
 
-            if (clientProfile.RequireVerifiedOnly
-                && caregiver.VerificationStatus != VerificationStatus.Approved)
+            var serviceCategory = await _uow.ServiceCategories.GetByIdAsync(dto.ServiceCategoryId);
+            if (serviceCategory == null || serviceCategory.IsDeleted)
+                return Result<BookingDto>.Fail("The booking service category is not available.");
+
+            if (clientProfile.RequireVerifiedOnly && caregiver.VerificationStatus != VerificationStatus.Approved)
                 return Result<BookingDto>.Fail("This client requires a verified caregiver.");
 
-            if (await _uow.Bookings.HasActiveBookingAsync(
-                    caregiver.Id, dto.ScheduledStartDate, dto.ScheduledEndDate))
+            if (await _uow.Bookings.HasActiveBookingAsync(caregiver.Id, dto.ScheduledStartDate, dto.ScheduledEndDate))
                 return Result<BookingDto>.Fail("Caregiver has a conflicting booking for those dates.");
 
             var amount = CalculateAmount(caregiver, dto);
@@ -110,7 +112,7 @@ namespace HelpAtHome.Application.Services
                     Description = $"Payment for booking {booking.BookingReference}"
                 });
 
-                await _uow.SaveChangesAsync();
+                var result = await _uow.SaveChangesAsync();
                 await _uow.CommitAsync();
 
                 await _notification.SendAsync(

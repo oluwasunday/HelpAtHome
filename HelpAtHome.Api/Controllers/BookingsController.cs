@@ -26,6 +26,7 @@ namespace HelpAtHome.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Create([FromBody] CreateBookingDto dto)
         {
+            var clientId = User.GetUserId();
             var result = await _bookingService.CreateBookingAsync(GetUserId(), dto);
             return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result) : BadRequest(result);
         }

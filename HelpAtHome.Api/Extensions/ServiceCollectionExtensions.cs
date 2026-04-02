@@ -31,12 +31,23 @@ namespace HelpAtHome.Api.Extensions
             services.Configure<MongoDbSettings>(config.GetSection("MongoDb"));
             services.AddSingleton<MongoDbContext>();
 
-            // ─── Redis ──────────────────────────────────────────────────────────
-            services.AddStackExchangeRedisCache(options =>
+            // ─── Cache ──────────────────────────────────────────────────────────
+            // Use Redis when a connection string is configured (staging/production).
+            // Fall back to in-process memory cache in development so the app runs
+            // without a local Redis instance.
+            var redisConnectionString = config.GetConnectionString("Redis");
+            if (!string.IsNullOrWhiteSpace(redisConnectionString))
             {
-                options.Configuration = config.GetConnectionString("Redis");
-                options.InstanceName  = "HelpAtHome:";
-            });
+                services.AddStackExchangeRedisCache(options =>
+                {
+                    options.Configuration = redisConnectionString;
+                    options.InstanceName  = "HelpAtHome:";
+                });
+            }
+            else
+            {
+                services.AddDistributedMemoryCache();
+            }
 
             // ─── Application Services ───────────────────────────────────────────
             services.AddHttpContextAccessor();
