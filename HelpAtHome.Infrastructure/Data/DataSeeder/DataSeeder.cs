@@ -424,6 +424,7 @@ namespace HelpAtHome.Infrastructure.Data.DataSeeder
                 new CaregiverProfile
                 {
                     Id = CgProfile1Id,
+                    IdNumber = "",
                     UserId = Caregiver1Id,
                     AgencyId = null,
                     Bio = "Experienced elderly care specialist with 6 years working in Lagos hospitals and private homes.",
@@ -446,13 +447,17 @@ namespace HelpAtHome.Infrastructure.Data.DataSeeder
                     AverageRating = 4.7m,
                     TotalReviews = 24,
                     CreatedAt = DateTime.UtcNow.AddMonths(-6),
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    DocumentPhotoUrl = "defaul.jpg",
+                    NextOfKinPhoneNumber = "09088776656",
+                    NextOfKinName = "Data Baga"
                 },
 
                 // Individual — Verified badge
                 new CaregiverProfile
                 {
                     Id = CgProfile2Id,
+                    IdNumber = "",
                     UserId = Caregiver2Id,
                     AgencyId = null,
                     Bio = "Dedicated male caregiver specialising in companionship and errands for elderly men.",
@@ -473,13 +478,17 @@ namespace HelpAtHome.Infrastructure.Data.DataSeeder
                     AverageRating = 4.4m,
                     TotalReviews = 7,
                     CreatedAt = DateTime.UtcNow.AddMonths(-3),
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    DocumentPhotoUrl = "defaul.jpg",
+                    NextOfKinPhoneNumber = "09088776656",
+                    NextOfKinName = "Data Baga"
                 },
 
                 // Agency 1 — Champion badge
                 new CaregiverProfile
                 {
                     Id = CgProfile3Id,
+                    IdNumber = "",
                     UserId = Caregiver3Id,
                     AgencyId = Agency1Id,
                     Bio = "Highly experienced senior carer with nursing background. Specialist in post-hospitalisation home recovery.",
@@ -500,13 +509,17 @@ namespace HelpAtHome.Infrastructure.Data.DataSeeder
                     AverageRating = 4.9m,
                     TotalReviews = 58,
                     CreatedAt = DateTime.UtcNow.AddMonths(-10),
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    DocumentPhotoUrl = "defaul.jpg",
+                    NextOfKinPhoneNumber = "09088776656",
+                    NextOfKinName = "Lala Lola"
                 },
 
                 // Agency 1 — New badge
                 new CaregiverProfile
                 {
                     Id = CgProfile4Id,
+                    IdNumber = "",
                     UserId = Caregiver4Id,
                     AgencyId = Agency1Id,
                     Bio = "New caregiver eager to assist elderly clients with daily routines and errands.",
@@ -527,13 +540,17 @@ namespace HelpAtHome.Infrastructure.Data.DataSeeder
                     AverageRating = 4.0m,
                     TotalReviews = 2,
                     CreatedAt = DateTime.UtcNow.AddMonths(-1),
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    DocumentPhotoUrl = "defaul.jpg",
+                    NextOfKinPhoneNumber = "09088776656",
+                    NextOfKinName = "Floyd Shure"
                 },
 
                 // Agency 1 — Pending verification
                 new CaregiverProfile
                 {
                     Id = CgProfile5Id,
+                    IdNumber = "",
                     UserId = Caregiver5Id,
                     AgencyId = Agency1Id,
                     Bio = "Caring and patient individual with passion for elderly care in Enugu.",
@@ -551,7 +568,10 @@ namespace HelpAtHome.Infrastructure.Data.DataSeeder
                     AverageRating = 0m,
                     TotalReviews = 0,
                     CreatedAt = DateTime.UtcNow.AddDays(-5),
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    DocumentPhotoUrl = "defaul.jpg",
+                    NextOfKinPhoneNumber = "09088776656",
+                    NextOfKinName = "Clement Kako"
                 }
             );
             await db.SaveChangesAsync();

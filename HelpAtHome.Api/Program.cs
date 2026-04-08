@@ -53,7 +53,9 @@ try
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseMySql(config.GetConnectionString("DefaultConnection"),
             ServerVersion.AutoDetect(config.GetConnectionString("DefaultConnection")),
-            b => b.MigrationsAssembly("HelpAtHome.Infrastructure")));
+            b => b.MigrationsAssembly("HelpAtHome.Infrastructure")
+        )
+    );
 
     // ── ASP.NET Core Identity ───────────────────────────────────────────────
     builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
